@@ -1014,7 +1014,7 @@ function card(a) {
     <div class="cover-wrap" onclick="openPreview('${a.id}')">
       ${a.image?`<img class="cover-img" src="${a.image}" alt="${esc(a.name)}" loading="lazy">`:`<div class="cover-placeholder">🎵</div>`}
       <div class="overlay">
-        <button class="o-btn preview-btn" onclick="openPreview('${a.id}');event.stopPropagation()">▷ Set Preview</button>
+        <button class="o-btn preview-btn" onclick="event.stopPropagation();forceOpenPreview('${a.id}')">▷ Set Preview</button>
         <button class="o-btn ${a.listened?'done':''}" onclick="toggleListened('${a.id}',event)">${a.listened?'✓ Listened':'Mark Listened'}</button>
         ${a.listened?`<button class="o-btn" style="background:rgba(200,169,110,0.12);border-color:rgba(200,169,110,0.3);color:var(--accent);" onclick="relisten('${a.id}',event)">↺ Relisten</button>`:''}
         ${a.spotifyUrl?`<button class="o-btn spotify" onclick="openSpotify('${a.spotifyUrl}',event)">Open in Spotify</button>`:''}
@@ -1447,114 +1447,95 @@ function showToast(msg) {
 </body>
 </html>
 <script>
-// ── PREVIEW PLAYER ──
-let audio = new Audio();
+// ── PREVIEW PLAYER (URL-based) ──
 let currentPreviewAlbumId = null;
-let currentTrackIndex = -1;
-let previewTracks = [];
 
-audio.addEventListener('ended', () => {
-  const next = previewTracks.findIndex((t, i) => i > currentTrackIndex && t.preview_url);
-  if (next !== -1) playTrack(next); else stopAudio();
-});
+function forceOpenPreview(albumId) {
+  currentPreviewAlbumId = null;
+  openPreview(albumId);
+}
 
-audio.addEventListener('timeupdate', () => {
-  if (!audio.duration) return;
-  const fill = document.getElementById('np-progress-fill');
-  if (fill) fill.style.width = ((audio.currentTime / audio.duration) * 100) + '%';
-});
-
-async function openPreview(albumId) {
-  if (!spotifyToken) return;
+function openPreview(albumId) {
   const album = albums.find(a => a.id === albumId);
   if (!album) return;
   if (currentPreviewAlbumId === albumId) {
     document.getElementById('preview-panel').classList.toggle('open');
     return;
   }
-  stopAudio();
   currentPreviewAlbumId = albumId;
-  currentTrackIndex = -1;
-  previewTracks = [];
+  clearPlayer();
   document.getElementById('preview-cover').src = album.image || '';
   document.getElementById('preview-album-name').textContent = album.name;
   document.getElementById('preview-album-artist').textContent = album.artist;
-  document.getElementById('preview-tracks').innerHTML = '<div class="preview-loading">Loading tracks\u2026</div>';
-  document.getElementById('now-playing-bar').classList.remove('visible');
+  const input = document.getElementById('preview-url-input');
+  if (input) input.value = album.previewUrl || '';
+  const clearBtn = document.getElementById('preview-url-clear');
+  if (clearBtn) clearBtn.style.display = album.previewUrl ? 'block' : 'none';
   document.getElementById('preview-panel').classList.add('open');
-  try {
-    const resp = await fetch(`https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50`, {
-      headers: { 'Authorization': `Bearer ${spotifyToken}` }
-    });
-    const data = await resp.json();
-    previewTracks = data.items || [];
-    renderTrackList();
-  } catch {
-    document.getElementById('preview-tracks').innerHTML = '<div class="preview-loading">Failed to load tracks</div>';
+  if (album.previewUrl) renderPlayer(album.previewUrl);
+}
+
+function openAndPlay(albumId, e) {
+  e.stopPropagation();
+  openPreview(albumId);
+}
+
+function savePreviewUrl() {
+  if (!currentPreviewAlbumId) return;
+  const url = document.getElementById('preview-url-input').value.trim();
+  if (!url) { showToast('Paste a URL first'); return; }
+  const a = albums.find(x => x.id === currentPreviewAlbumId);
+  if (!a) return;
+  a.previewUrl = url;
+  saveAlbums(); renderGrid(); scheduleSync();
+  document.getElementById('preview-url-clear').style.display = 'block';
+  renderPlayer(url);
+  showToast('Preview saved ✓');
+}
+
+function clearPreviewUrl() {
+  if (!currentPreviewAlbumId) return;
+  const a = albums.find(x => x.id === currentPreviewAlbumId);
+  if (!a) return;
+  delete a.previewUrl;
+  saveAlbums(); renderGrid(); scheduleSync();
+  document.getElementById('preview-url-input').value = '';
+  document.getElementById('preview-url-clear').style.display = 'none';
+  clearPlayer();
+  showToast('Preview removed');
+}
+
+function clearPlayer() {
+  const wrap = document.getElementById('preview-player-wrap');
+  if (wrap) { wrap.innerHTML = ''; wrap.style.display = 'none'; }
+}
+
+function renderPlayer(url) {
+  const wrap = document.getElementById('preview-player-wrap');
+  if (!wrap) return;
+  wrap.style.display = 'block';
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) {
+    wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1" height="160" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    return;
   }
-}
-
-function renderTrackList() {
-  const hasAny = previewTracks.some(t => t.preview_url);
-  document.getElementById('preview-tracks').innerHTML = previewTracks.map((t, i) => {
-    const mins = Math.floor((t.duration_ms||0)/60000);
-    const secs = String(Math.floor(((t.duration_ms||0)%60000)/1000)).padStart(2,'0');
-    const has = !!t.preview_url;
-    return `<div class="track-item${!has?' no-preview':''}" onclick="${has?`playTrack(${i})`:''}">
-      <div class="track-num">${i+1}</div>
-      <svg class="track-play-icon" viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
-        ${has?'<polygon points="5,3 19,12 5,21"/>':'<line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2.5"/>'}
-      </svg>
-      <div class="track-name">${esc(t.name)}</div>
-      <div class="track-duration">${mins}:${secs}</div>
-    </div>`;
-  }).join('') + `<div class="no-preview-note">${hasAny?'Greyed tracks have no preview available':'No previews available for this album'}</div>`;
-}
-
-function playTrack(index) {
-  const track = previewTracks[index];
-  if (!track?.preview_url) return;
-  audio.pause();
-  currentTrackIndex = index;
-  audio.src = track.preview_url;
-  audio.play().catch(() => showToast('Tap the track again to play'));
-  document.getElementById('np-track-name').textContent = track.name;
-  document.getElementById('now-playing-bar').classList.add('visible');
-  setPauseIcon();
-  document.querySelectorAll('.track-item').forEach((el, i) => {
-    el.classList.toggle('playing', i === index);
-    el.querySelector('.track-num').textContent = i === index ? '▶' : i+1;
-  });
-}
-
-function stopAudio(resetBar = true) {
-  audio.pause(); audio.currentTime = 0;
-  if (resetBar) {
-    document.getElementById('now-playing-bar').classList.remove('visible');
-    const fill = document.getElementById('np-progress-fill');
-    if (fill) fill.style.width = '0%';
-    document.querySelectorAll('.track-item').forEach((el, i) => { el.classList.remove('playing'); el.querySelector('.track-num').textContent = i+1; });
-    currentTrackIndex = -1;
+  if (url.includes('soundcloud.com')) {
+    wrap.innerHTML = `<iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23c8a96e&auto_play=true&hide_related=true&show_comments=false" height="100" allow="autoplay"></iframe>`;
+    return;
   }
-  setPlayIcon();
-}
-
-function togglePlayPause() {
-  if (audio.paused) { audio.play(); setPauseIcon(); } else { audio.pause(); setPlayIcon(); }
-}
-
-function setPlayIcon() { document.getElementById('np-playpause').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>'; }
-function setPauseIcon() { document.getElementById('np-playpause').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; }
-
-function seekAudio(e) {
-  if (!audio.duration) return;
-  const rect = e.currentTarget.getBoundingClientRect();
-  audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+  const spMatch = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/);
+  if (spMatch) {
+    wrap.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${spMatch[1]}" height="80" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+    return;
+  }
+  wrap.innerHTML = `<audio controls autoplay src="${url}" style="width:100%;height:36px;accent-color:var(--accent);"></audio>`;
 }
 
 function closePreview() {
-  stopAudio();
+  clearPlayer();
   document.getElementById('preview-panel').classList.remove('open');
   currentPreviewAlbumId = null;
 }
 </script>
+</body>
+</html>
