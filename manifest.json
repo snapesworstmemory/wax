@@ -1,0 +1,17 @@
+{
+  "name": "Wax — Album List",
+  "short_name": "Wax",
+  "description": "Your personal album watchlist",
+  "start_url": "./wax.html",
+  "display": "standalone",
+  "background_color": "#0e0c0a",
+  "theme_color": "#0e0c0a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%230e0c0a'/><text x='96' y='130' font-size='100' text-anchor='middle' fill='%23c8a96e' font-family='serif'>W</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

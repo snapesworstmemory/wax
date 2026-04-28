@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wax">
+<meta name="theme-color" content="#0e0c0a">
+<link rel="manifest" href="manifest.json">
+<title>Wax — Album List</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0e0c0a; --bg2: #1a1713; --bg3: #242019;
+  --card: #1e1b16; --card-hover: #272319;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+  --text: #f0ebe2; --muted: #8a8070;
+  --accent: #c8a96e; --accent2: #e8c88a;
+  --green: #5a9e72; --green-bg: rgba(90,158,114,0.15);
+  --red: #e05c5c; --radius: 10px; --radius-sm: 6px;
+}
+html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+/* SETUP */
+#setup-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1.5rem; text-align: center; }
+.setup-logo { font-family: 'Playfair Display', serif; font-size: 3.5rem; color: var(--accent); letter-spacing: -1px; margin-bottom: 0.2rem; }
+.setup-tagline { color: var(--muted); font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 2.5rem; }
+.setup-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; padding: 2rem; max-width: 420px; width: 100%; text-align: left; margin-bottom: 1rem; }
+.setup-card h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 400; margin-bottom: 0.5rem; }
+.setup-card p { color: var(--muted); font-size: 0.85rem; line-height: 1.65; margin-bottom: 1rem; }
+.setup-card a { color: var(--accent); }
+.setup-card code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 0.82rem; color: var(--accent2); word-break: break-all; }
+.step { display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted); line-height: 1.55; }
+.step-num { background: var(--accent); color: #1a1713; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 500; flex-shrink: 0; margin-top: 2px; }
+.field-row { margin-bottom: 0.85rem; }
+.field-row label { font-size: 0.78rem; color: var(--muted); display: block; margin-bottom: 0.3rem; }
+.field-row input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 0.65rem 0.75rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+.field-row input:focus { border-color: var(--accent); }
+.btn-primary { width: 100%; background: var(--accent); color: #1a1713; border: none; border-radius: var(--radius-sm); padding: 0.8rem; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.95rem; cursor: pointer; transition: background 0.2s; margin-top: 0.25rem; }
+.btn-primary:hover { background: var(--accent2); }
+.setup-note { margin-top: 0.85rem; font-size: 0.75rem; color: var(--muted); text-align: center; }
+.setup-error { color: var(--red); font-size: 0.8rem; margin-top: 0.5rem; display: none; }
+.service-divider { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0 1.25rem; color: var(--muted); font-size: 0.75rem; }
+.service-divider::before, .service-divider::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+
+/* HEADER */
+#app { display: none; min-height: 100vh; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.25rem 0.75rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(14,12,10,0.92); backdrop-filter: blur(12px); z-index: 100; }
+.logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--accent); letter-spacing: -0.5px; line-height: 1; }
+.header-right { display: flex; align-items: center; gap: 0.6rem; }
+.stats-pill { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 0.3rem 0.75rem; font-size: 0.78rem; color: var(--muted); }
+.stats-pill span { color: var(--accent); font-weight: 500; }
+.btn-icon { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s; color: var(--muted); font-size: 1rem; flex-shrink: 0; }
+.btn-icon:hover { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+
+/* SYNC STATUS */
+#sync-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1.25rem; font-size: 0.75rem; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--bg2); min-height: 30px; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.3s; }
+.sync-dot.synced { background: var(--green); }
+.sync-dot.syncing { background: var(--accent); animation: pulse 1s infinite; }
+.sync-dot.error { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* TABS */
+.tabs { display: flex; gap: 0.4rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); }
+.tab { background: none; border: 1px solid var(--border); border-radius: 20px; padding: 0.3rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.tab.active { background: var(--accent); border-color: var(--accent); color: #1a1713; font-weight: 500; }
+.tab:hover:not(.active) { border-color: var(--border2); color: var(--text); }
+
+/* SEARCH PANEL */
+#search-panel { display: none; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg2); }
+#search-panel.open { display: block; }
+.search-wrap { position: relative; }
+.search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+#search-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 0.65rem 0.75rem 0.65rem 2.5rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+#search-input:focus { border-color: var(--accent); }
+#search-input::placeholder { color: var(--muted); }
+#search-results { margin-top: 0.65rem; display: flex; flex-direction: column; gap: 0.45rem; max-height: 340px; overflow-y: auto; }
+.s-item { display: flex; align-items: center; gap: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.55rem 0.75rem; cursor: pointer; transition: background 0.15s; }
+.s-item:hover { background: var(--card-hover); border-color: var(--border2); }
+.s-thumb { width: 44px; height: 44px; border-radius: 4px; object-fit: cover; flex-shrink: 0; background: var(--bg3); }
+.s-info { flex: 1; min-width: 0; }
+.s-name { font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-artist { font-size: 0.76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-year { font-size: 0.74rem; color: var(--muted); flex-shrink: 0; }
+.add-btn { background: var(--accent); color: #1a1713; border: none; border-radius: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; flex-shrink: 0; font-weight: 500; transition: background 0.15s; }
+.add-btn:hover { background: var(--accent2); }
+.add-btn.added { background: var(--green); cursor: default; font-size: 0.8rem; }
+.s-msg { text-align: center; padding: 1.25rem; color: var(--muted); font-size: 0.85rem; }
+
+/* GRID */
+#grid-wrap { padding: 1rem 1rem 6rem; }
+.section-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; padding: 0 0.2rem; }
+.album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.85rem; }
+.a-card { position: relative; cursor: pointer; border-radius: var(--radius); overflow: hidden; background: var(--card); transition: transform 0.18s ease; }
+.a-card:hover { transform: translateY(-3px); }
+.a-card.listened { opacity: 0.55; }
+.cover-wrap { position: relative; aspect-ratio: 1; overflow: hidden; }
+.cover-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.25s ease; }
+.a-card:hover .cover-img { transform: scale(1.05); }
+.cover-placeholder { width: 100%; height: 100%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+.overlay { position: absolute; inset: 0; background: rgba(14,12,10,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.45rem; opacity: 0; transition: opacity 0.18s ease; }
+.a-card:hover .overlay { opacity: 1; }
+.o-btn { display: flex; align-items: center; justify-content: center; gap: 0.35rem; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.18); border-radius: 20px; padding: 0.38rem 0; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.76rem; cursor: pointer; width: 82%; transition: background 0.15s; }
+.o-btn:hover { background: rgba(255,255,255,0.17); }
+.o-btn.done { background: var(--green-bg); border-color: var(--green); color: #a0d4b4; }
+.o-btn.spotify { background: rgba(30,215,96,0.09); border-color: rgba(30,215,96,0.28); color: #1ED760; }
+.o-btn.remove { background: rgba(224,92,92,0.09); border-color: rgba(224,92,92,0.28); color: #e8a0a0; }
+.done-badge { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: white; opacity: 0; transition: opacity 0.2s; }
+.a-card.listened .done-badge { opacity: 1; }
+.a-info { padding: 0.6rem 0.6rem 0.65rem; }
+.a-name { font-size: 0.82rem; font-weight: 500; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0.2rem; }
+.a-artist { font-size: 0.73rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a-year { font-size: 0.68rem; color: var(--muted); opacity: 0.7; }
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+.empty-state .ei { font-size: 3rem; display: block; margin-bottom: 1rem; }
+.empty-state p { font-size: 0.9rem; line-height: 1.7; }
+.empty-state strong { color: var(--text); }
+.listened-section { margin-top: 1.5rem; }
+.collapse-btn { display: flex; align-items: center; gap: 0.4rem; background: none; border: none; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; padding: 0 0.2rem; margin-bottom: 0.75rem; font-family: 'DM Sans', sans-serif; }
+.collapse-btn:hover { color: var(--text); }
+.arrow { font-size: 0.6rem; transition: transform 0.2s; }
+.collapsed .arrow { transform: rotate(-90deg); }
+#listened-wrap { overflow: hidden; transition: max-height 0.3s ease; }
+#toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg2); border: 1px solid var(--border2); border-radius: 20px; padding: 0.6rem 1.25rem; font-size: 0.85rem; color: var(--text); z-index: 999; transition: transform 0.25s ease; white-space: nowrap; pointer-events: none; }
+#toast.show { transform: translateX(-50%) translateY(0); }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+@media (max-width: 360px) { .album-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <div class="setup-logo">Wax</div>
+  <div class="setup-tagline">Your personal album watchlist</div>
+
+  <!-- SPOTIFY CARD -->
+  <div class="setup-card" id="spotify-card">
+    <h2>Step 1 — Connect Spotify</h2>
+    <p>For album search. Only needs your Client ID — no secret required.</p>
+    <div class="step"><div class="step-num">1</div><div>Go to <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com/dashboard</a> → Create app → tick <strong style="color:var(--text)">Web API</strong>.</div></div>
+    <div class="step"><div class="step-num">2</div><div>Set Redirect URI to: <br><code id="redirect-display">loading…</code></div></div>
+    <div class="step"><div class="step-num">3</div><div>Copy your <strong style="color:var(--text)">Client ID</strong> from Settings.</div></div>
+    <div class="field-row" style="margin-top:1rem;">
+      <label>Spotify Client ID</label>
+      <input type="text" id="client-id-input" placeholder="e.g. 3a8f2c1d4e5b6789abcd…" autocomplete="off" spellcheck="false">
+    </div>
+    <p id="spotify-error" class="setup-error"></p>
+    <button class="btn-primary" onclick="startSpotifyLogin()">Connect Spotify →</button>
+    <p class="setup-note">You'll approve access on Spotify's site, then return here.</p>
+  </div>
+
+  <!-- DROPBOX CARD -->
+  <div class="setup-card" id="dropbox-card" style="display:none;">
+    <h2>Step 2 — Connect Dropbox</h2>
+    <p>For syncing your album list across all your devices. Your list saves to a single file in your Dropbox.</p>
+    <div class="step"><div class="step-num">1</div><div>Go to <a href="https://www.dropbox.com/developers/apps" target="_blank">dropbox.com/developers/apps</a> → <strong style="color:var(--text)">Create app</strong>.</div></div>
+    <div class="step"><div class="step-num">2</div><div>Choose <strong style="color:var(--text)">Scoped access</strong> → <strong style="color:var(--text)">App folder</strong> → name it <strong style="color:var(--text)">Wax</strong>.</div></div>
+    <div class="step"><div class="step-num">3</div><div>In your app's Settings, add this Redirect URI: <br><code id="dbx-redirect-display">loading…</code></div></div>
+    <div class="step"><div class="step-num">4</div><div>Go to the <strong style="color:var(--text)">Permissions</strong> tab and enable <strong style="color:var(--text)">files.content.read</strong> and <strong style="color:var(--text)">files.content.write</strong>. Submit, then go back to Settings and copy your <strong style="color:var(--text)">App key</strong>.</div></div>
+    <div class="field-row" style="margin-top:1rem;">
+      <label>Dropbox App Key</label>
+      <input type="text" id="dbx-key-input" placeholder="e.g. abc123xyz…" autocomplete="off" spellcheck="false">
+    </div>
+    <p id="dropbox-error" class="setup-error"></p>
+    <button class="btn-primary" onclick="startDropboxLogin()">Connect Dropbox →</button>
+    <button class="btn-primary" onclick="skipDropbox()" style="background:transparent;border:1px solid var(--border2);color:var(--muted);margin-top:0.5rem;">Skip — use local storage only</button>
+    <p class="setup-note">You'll approve access on Dropbox's site, then return here.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="logo">Wax</div>
+    <div class="header-right">
+      <div class="stats-pill"><span id="want-count">0</span> to listen · <span id="done-count">0</span> done</div>
+      <button class="btn-icon" onclick="toggleSearch()" title="Search albums">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="btn-icon" onclick="manualSync()" title="Sync now" id="sync-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button class="btn-icon" onclick="showSettings()" title="Settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="sync-bar">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">Loading…</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setFilter('all',this)">All</button>
+    <button class="tab" onclick="setFilter('want',this)">To Listen</button>
+    <button class="tab" onclick="setFilter('listened',this)">Listened</button>
+  </div>
+
+  <div id="search-panel">
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="Search albums…" autocomplete="off" oninput="debounce(this.value)">
+    </div>
+    <div id="search-results"></div>
+  </div>
+
+  <div id="grid-wrap"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── KEYS ──
+const ALBUMS_KEY   = 'wax_albums_v3';
+const SP_TOKEN_KEY = 'wax_sp_token';
+const SP_CID_KEY   = 'wax_sp_cid';
+const SP_PKCE_KEY  = 'wax_sp_pkce';
+const DBX_KEY_KEY  = 'wax_dbx_key';
+const DBX_TOKEN_KEY= 'wax_dbx_token';
+const DBX_PKCE_KEY = 'wax_dbx_pkce';
+const SETUP_KEY    = 'wax_setup_done';
+const DBX_FILE     = '/wax-albums.json';
+
+let albums = [];
+let spotifyToken = null;
+let dropboxToken = null;
+let currentFilter = 'all';
+let listenedCollapsed = false;
+let searchTimer = null;
+let searchOpen = false;
+let syncPending = false;
+let syncTimer = null;
+let isOnline = navigator.onLine;
+
+// ── REDIRECT URI ──
+function getRedirectUri() { return location.origin + location.pathname; }
+
+// ── PKCE ──
+function base64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function generatePKCE() {
+  const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return { verifier, challenge: base64url(hash) };
+}
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('redirect-display').textContent = getRedirectUri();
+  document.getElementById('dbx-redirect-display').textContent = getRedirectUri();
+
+  window.addEventListener('online',  () => { isOnline = true;  if (syncPending) syncToDropbox(); setSyncStatus('synced', 'Synced'); });
+  window.addEventListener('offline', () => { isOnline = false; setSyncStatus('error', 'Offline — changes saved locally'); });
+
+  const params = new URLSearchParams(location.search);
+  const code  = params.get('code');
+  const state = params.get('state');
+
+  if (code && state === 'spotify') {
+    history.replaceState({}, '', location.pathname);
+    await exchangeSpotifyCode(code);
+    return;
+  }
+
+  if (code && state === 'dropbox') {
+    history.replaceState({}, '', location.pathname);
+    await exchangeDropboxCode(code);
+    return;
+  }
+
+  // Check what's already set up
+  spotifyToken = getStoredSpotifyToken();
+  dropboxToken = localStorage.getItem(DBX_TOKEN_KEY);
+
+  const setupDone = localStorage.getItem(SETUP_KEY);
+
+  if (spotifyToken && setupDone) {
+    showApp();
+  } else if (spotifyToken && !setupDone) {
+    // Spotify done, need Dropbox
+    showDropboxCard();
+  } else {
+    showSpotifyCard();
+  }
+});
+
+// ── SETUP FLOW ──
+function showSpotifyCard() {
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('spotify-card').style.display = 'block';
+  document.getElementById('dropbox-card').style.display = 'none';
+  const saved = localStorage.getItem(SP_CID_KEY);
+  if (saved) document.getElementById('client-id-input').value = saved;
+}
+
+function showDropboxCard() {
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('spotify-card').style.display = 'none';
+  document.getElementById('dropbox-card').style.display = 'block';
+  const saved = localStorage.getItem(DBX_KEY_KEY);
+  if (saved) document.getElementById('dbx-key-input').value = saved;
+}
+
+function showApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  albums = loadAlbums();
+  renderGrid();
+  updateStats();
+  if (dropboxToken) {
+    loadFromDropbox();
+  } else {
+    setSyncStatus('error', 'Local only — no Dropbox connected');
+  }
+}
+
+function showSettings() {
+  if (confirm('Disconnect and reset Wax? Your album list in Dropbox will be kept.')) {
+    localStorage.removeItem(SP_TOKEN_KEY);
+    localStorage.removeItem(DBX_TOKEN_KEY);
+    localStorage.removeItem(SETUP_KEY);
+    spotifyToken = null; dropboxToken = null;
+    location.reload();
+  }
+}
+
+function skipDropbox() {
+  localStorage.setItem(SETUP_KEY, '1');
+  showApp();
+}
+
+// ── SPOTIFY AUTH ──
+function getStoredSpotifyToken() {
+  try {
+    const t = JSON.parse(localStorage.getItem(SP_TOKEN_KEY));
+    if (t && t.token && t.expiry > Date.now()) return t.token;
+  } catch {}
+  return null;
+}
+
+async function startSpotifyLogin() {
+  const clientId = document.getElementById('client-id-input').value.trim();
+  const errEl = document.getElementById('spotify-error');
+  errEl.style.display = 'none';
+  if (!clientId) { errEl.style.display='block'; errEl.textContent='Please enter your Client ID.'; return; }
+  localStorage.setItem(SP_CID_KEY, clientId);
+  const { verifier, challenge } = await generatePKCE();
+  sessionStorage.setItem(SP_PKCE_KEY, verifier);
+  const url = new URL('https://accounts.spotify.com/authorize');
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('redirect_uri', getRedirectUri());
+  url.searchParams.set('scope', 'user-read-private');
+  url.searchParams.set('code_challenge_method', 'S256');
+  url.searchParams.set('code_challenge', challenge);
+  url.searchParams.set('state', 'spotify');
+  location.href = url.toString();
+}
+
+async function exchangeSpotifyCode(code) {
+  const clientId = localStorage.getItem(SP_CID_KEY);
+  const verifier = sessionStorage.getItem(SP_PKCE_KEY);
+  if (!clientId || !verifier) { showSpotifyCard(); return; }
+  const resp = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type:'authorization_code', code, redirect_uri:getRedirectUri(), client_id:clientId, code_verifier:verifier })
+  });
+  if (!resp.ok) {
+    showSpotifyCard();
+    const e = document.getElementById('spotify-error');
+    e.style.display='block'; e.textContent='Auth failed — check the Redirect URI matches exactly.';
+    return;
+  }
+  const data = await resp.json();
+  localStorage.setItem(SP_TOKEN_KEY, JSON.stringify({ token: data.access_token, expiry: Date.now() + data.expires_in * 1000 - 60000 }));
+  spotifyToken = data.access_token;
+  sessionStorage.removeItem(SP_PKCE_KEY);
+  showDropboxCard();
+}
+
+// ── DROPBOX AUTH (PKCE) ──
+async function startDropboxLogin() {
+  const appKey = document.getElementById('dbx-key-input').value.trim();
+  const errEl = document.getElementById('dropbox-error');
+  errEl.style.display = 'none';
+  if (!appKey) { errEl.style.display='block'; errEl.textContent='Please enter your Dropbox App Key.'; return; }
+  localStorage.setItem(DBX_KEY_KEY, appKey);
+  const { verifier, challenge } = await generatePKCE();
+  sessionStorage.setItem(DBX_PKCE_KEY, verifier);
+  const url = new URL('https://www.dropbox.com/oauth2/authorize');
+  url.searchParams.set('client_id', appKey);
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('redirect_uri', getRedirectUri());
+  url.searchParams.set('code_challenge_method', 'S256');
+  url.searchParams.set('code_challenge', challenge);
+  url.searchParams.set('token_access_type', 'offline');
+  url.searchParams.set('state', 'dropbox');
+  location.href = url.toString();
+}
+
+async function exchangeDropboxCode(code) {
+  const appKey = localStorage.getItem(DBX_KEY_KEY);
+  const verifier = sessionStorage.getItem(DBX_PKCE_KEY);
+  if (!appKey || !verifier) { showDropboxCard(); return; }
+  const resp = await fetch('https://api.dropboxapi.com/oauth2/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ code, grant_type:'authorization_code', redirect_uri:getRedirectUri(), client_id:appKey, code_verifier:verifier })
+  });
+  if (!resp.ok) {
+    showDropboxCard();
+    const e = document.getElementById('dropbox-error');
+    e.style.display='block'; e.textContent='Dropbox auth failed — check your App Key and Redirect URI.';
+    return;
+  }
+  const data = await resp.json();
+  // Store refresh token + access token
+  localStorage.setItem(DBX_TOKEN_KEY, JSON.stringify({ access: data.access_token, refresh: data.refresh_token, expiry: Date.now() + (data.expires_in||14400)*1000 - 60000 }));
+  dropboxToken = data.access_token;
+  sessionStorage.removeItem(DBX_PKCE_KEY);
+  localStorage.setItem(SETUP_KEY, '1');
+  showApp();
+}
+
+async function getDropboxToken() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(DBX_TOKEN_KEY));
+    if (!stored) return null;
+    if (stored.expiry > Date.now()) return stored.access;
+    // Refresh
+    const appKey = localStorage.getItem(DBX_KEY_KEY);
+    const resp = await fetch('https://api.dropboxapi.com/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type:'refresh_token', refresh_token:stored.refresh, client_id:appKey })
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const updated = { ...stored, access: data.access_token, expiry: Date.now() + (data.expires_in||14400)*1000 - 60000 };
+    localStorage.setItem(DBX_TOKEN_KEY, JSON.stringify(updated));
+    return data.access_token;
+  } catch { return null; }
+}
+
+// ── DROPBOX SYNC ──
+async function loadFromDropbox() {
+  setSyncStatus('syncing', 'Syncing…');
+  const token = await getDropboxToken();
+  if (!token) { setSyncStatus('error', 'Dropbox not connected'); return; }
+  try {
+    const resp = await fetch('https://content.dropboxapi.com/2/files/download', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Dropbox-API-Arg': JSON.stringify({ path: DBX_FILE }) }
+    });
+    if (resp.status === 409) {
+      // File doesn't exist yet — upload local data
+      await syncToDropbox();
+      return;
+    }
+    if (!resp.ok) throw new Error('Download failed');
+    const remote = await resp.json();
+    // Merge: combine remote + local, dedupe by id, prefer most recent addedAt
+    const local = loadAlbums();
+    const merged = mergeAlbums(local, remote);
+    albums = merged;
+    saveAlbums();
+    renderGrid();
+    updateStats();
+    setSyncStatus('synced', `Synced · ${fmtTime(new Date())}`);
+  } catch (e) {
+    setSyncStatus('error', 'Sync failed — working offline');
+  }
+}
+
+async function syncToDropbox() {
+  if (!isOnline) { syncPending = true; setSyncStatus('error', 'Offline — will sync when back online'); return; }
+  const token = await getDropboxToken();
+  if (!token) { setSyncStatus('error', 'Local only'); return; }
+  setSyncStatus('syncing', 'Syncing…');
+  try {
+    const body = JSON.stringify(albums);
+    const resp = await fetch('https://content.dropboxapi.com/2/files/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Dropbox-API-Arg': JSON.stringify({ path: DBX_FILE, mode: 'overwrite', autorename: false, mute: true }),
+        'Content-Type': 'application/octet-stream'
+      },
+      body
+    });
+    if (!resp.ok) throw new Error('Upload failed');
+    syncPending = false;
+    setSyncStatus('synced', `Synced · ${fmtTime(new Date())}`);
+  } catch {
+    syncPending = true;
+    setSyncStatus('error', 'Sync failed — will retry');
+  }
+}
+
+function schedulSync() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncToDropbox(), 1500);
+}
+
+function manualSync() { if (dropboxToken) loadFromDropbox(); else showToast('No Dropbox connected'); }
+
+function mergeAlbums(local, remote) {
+  const map = new Map();
+  [...remote, ...local].forEach(a => {
+    const existing = map.get(a.id);
+    if (!existing || a.addedAt > existing.addedAt) map.set(a.id, a);
+    // If listened state differs, prefer listened=true (don't unmark)
+    if (existing && a.listened) map.get(a.id).listened = true;
+  });
+  return Array.from(map.values()).sort((a,b) => b.addedAt - a.addedAt);
+}
+
+function setSyncStatus(state, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  if (!dot || !lbl) return;
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = label;
+}
+
+function fmtTime(d) { return d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); }
+
+// ── SEARCH ──
+function toggleSearch() {
+  searchOpen = !searchOpen;
+  const panel = document.getElementById('search-panel');
+  if (searchOpen) {
+    panel.classList.add('open');
+    setTimeout(() => document.getElementById('search-input').focus(), 50);
+  } else {
+    panel.classList.remove('open');
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-results').innerHTML = '';
+  }
+}
+
+function debounce(val) {
+  clearTimeout(searchTimer);
+  const el = document.getElementById('search-results');
+  if (!val.trim()) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="s-msg">Searching…</div>';
+  searchTimer = setTimeout(() => doSearch(val.trim()), 420);
+}
+
+async function doSearch(q) {
+  if (!spotifyToken) return;
+  try {
+    const resp = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=album&limit=10`, {
+      headers: { 'Authorization': `Bearer ${spotifyToken}` }
+    });
+    if (resp.status === 401) { spotifyToken = null; showToast('Spotify session expired — please reconnect'); return; }
+    const data = await resp.json();
+    renderResults(data.albums.items);
+  } catch {
+    document.getElementById('search-results').innerHTML = '<div class="s-msg">Search failed, try again</div>';
+  }
+}
+
+function renderResults(items) {
+  const el = document.getElementById('search-results');
+  if (!items || !items.length) { el.innerHTML = '<div class="s-msg">No albums found</div>'; return; }
+  const ids = new Set(albums.map(a => a.id));
+  el.innerHTML = items.map(a => {
+    const img = (a.images[1] || a.images[0] || {}).url || '';
+    const year = (a.release_date || '').slice(0,4);
+    const added = ids.has(a.id);
+    const albumData = JSON.stringify({ id:a.id, name:a.name, artist:a.artists.map(x=>x.name).join(', '), year, image:img, spotifyUrl:a.external_urls.spotify, listened:false, addedAt:Date.now() });
+    return `<div class="s-item" onclick='addAlbum(${JSON.stringify(albumData)}, this)'>
+      ${img ? `<img class="s-thumb" src="${img}" alt="">` : `<div class="s-thumb"></div>`}
+      <div class="s-info">
+        <div class="s-name">${esc(a.name)}</div>
+        <div class="s-artist">${esc(a.artists.map(x=>x.name).join(', '))}</div>
+      </div>
+      <div class="s-year">${year}</div>
+      <button class="add-btn ${added?'added':''}">${added?'✓':'+'}</button>
+    </div>`;
+  }).join('');
+}
+
+function addAlbum(jsonStr, row) {
+  const a = JSON.parse(jsonStr);
+  if (albums.some(x => x.id === a.id)) { showToast('Already in your list'); return; }
+  a.addedAt = Date.now();
+  albums.unshift(a);
+  saveAlbums();
+  renderGrid();
+  updateStats();
+  schedulSync();
+  const btn = row.querySelector('.add-btn');
+  if (btn) { btn.classList.add('added'); btn.textContent = '✓'; }
+  showToast(`Added "${a.name}"`);
+}
+
+// ── GRID ──
+function renderGrid() {
+  const wrap = document.getElementById('grid-wrap');
+  let want = albums.filter(a => !a.listened);
+  let done = albums.filter(a => a.listened);
+  if (currentFilter === 'want') done = [];
+  if (currentFilter === 'listened') want = [];
+
+  if (!want.length && !done.length) {
+    wrap.innerHTML = `<div class="empty-state"><span class="ei">🎵</span><p>${currentFilter==='listened' ? 'No listened albums yet.' : 'Your list is empty.<br><strong>Tap the search icon</strong> above to find albums.'}</p></div>`;
+    return;
+  }
+
+  let html = '';
+  if (want.length) {
+    html += `<div class="section-label">To Listen — ${want.length}</div>`;
+    html += `<div class="album-grid">${want.map(card).join('')}</div>`;
+  }
+  if (done.length) {
+    html += `<div class="listened-section">
+      <button class="collapse-btn ${listenedCollapsed?'collapsed':''}" onclick="toggleCollapse(this)">
+        <span>Listened — ${done.length}</span><span class="arrow">▼</span>
+      </button>
+      <div id="listened-wrap" style="max-height:${listenedCollapsed?'0':'9999px'};">
+        <div class="album-grid">${done.map(card).join('')}</div>
+      </div>
+    </div>`;
+  }
+  wrap.innerHTML = html;
+}
+
+function card(a) {
+  return `<div class="a-card ${a.listened?'listened':''}" data-id="${a.id}">
+    <div class="cover-wrap">
+      ${a.image ? `<img class="cover-img" src="${a.image}" alt="${esc(a.name)}" loading="lazy">` : `<div class="cover-placeholder">🎵</div>`}
+      <div class="overlay">
+        <button class="o-btn ${a.listened?'done':''}" onclick="toggleListened('${a.id}',event)">${a.listened?'✓ Listened':'▷ Mark Listened'}</button>
+        ${a.spotifyUrl ? `<button class="o-btn spotify" onclick="openSpotify('${a.spotifyUrl}',event)">Open in Spotify</button>` : ''}
+        <button class="o-btn remove" onclick="removeAlbum('${a.id}',event)">Remove</button>
+      </div>
+      <div class="done-badge">✓</div>
+    </div>
+    <div class="a-info">
+      <div class="a-name">${esc(a.name)}</div>
+      <div class="a-artist">${esc(a.artist)}</div>
+      ${a.year ? `<div class="a-year">${a.year}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function toggleListened(id, e) {
+  e.stopPropagation();
+  const a = albums.find(x => x.id === id);
+  if (!a) return;
+  a.listened = !a.listened;
+  if (a.listened) a.listenedAt = Date.now();
+  saveAlbums(); renderGrid(); updateStats(); schedulSync();
+  showToast(a.listened ? '✓ Marked as listened' : 'Moved back to To Listen');
+}
+
+function openSpotify(url, e) { e.stopPropagation(); window.open(url, '_blank'); }
+
+function removeAlbum(id, e) {
+  e.stopPropagation();
+  const a = albums.find(x => x.id === id);
+  if (!a || !confirm(`Remove "${a.name}"?`)) return;
+  albums = albums.filter(x => x.id !== id);
+  saveAlbums(); renderGrid(); updateStats(); schedulSync();
+  showToast('Removed');
+}
+
+function toggleCollapse(btn) {
+  listenedCollapsed = !listenedCollapsed;
+  btn.classList.toggle('collapsed', listenedCollapsed);
+  const w = document.getElementById('listened-wrap');
+  if (w) w.style.maxHeight = listenedCollapsed ? '0' : '9999px';
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+}
+
+function updateStats() {
+  document.getElementById('want-count').textContent = albums.filter(a => !a.listened).length;
+  document.getElementById('done-count').textContent = albums.filter(a => a.listened).length;
+}
+
+// ── STORAGE ──
+function loadAlbums() { try { return JSON.parse(localStorage.getItem(ALBUMS_KEY)) || []; } catch { return []; } }
+function saveAlbums() { localStorage.setItem(ALBUMS_KEY, JSON.stringify(albums)); }
+
+// ── UTILS ──
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+</script>
+</body>
+</html>
