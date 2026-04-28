@@ -342,6 +342,28 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
 }
 .history-relisten-btn:hover { background: var(--accent2); }
 
+/* HIDDEN ALBUMS */
+.hidden-toggle {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+}
+.hidden-toggle:hover { color: var(--text); }
+.hidden-grid {
+  padding: 0 0 1rem;
+}
+.ar-card.ar-hidden {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+.o-btn.hide { background: rgba(224,92,92,0.09); border-color: rgba(224,92,92,0.28); color: #e8a0a0; }
+.o-btn.unhide { background: rgba(90,158,114,0.12); border-color: var(--green); color: #a0d4b4; }
+
+/* ARTIST PAGE */
 /* ARTIST PAGE */
 #artist-page {
   display: none;
@@ -550,20 +572,16 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
     </div>
     <button class="preview-close" onclick="closePreview()">✕</button>
   </div>
-  <div id="now-playing-bar">
-    <div class="np-track" id="np-track-name">—</div>
-    <div class="np-controls">
-      <button class="np-btn" onclick="togglePlayPause()" id="np-playpause">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-      </button>
+  <div class="preview-url-section">
+    <div class="preview-url-label">Preview track URL</div>
+    <div class="preview-url-row">
+      <input type="url" class="preview-url-input" id="preview-url-input" placeholder="Paste a YouTube, SoundCloud, or audio URL…">
+      <button class="preview-url-save" onclick="savePreviewUrl()">Save</button>
+      <button class="preview-url-clear" id="preview-url-clear" onclick="clearPreviewUrl()" style="display:none">Remove</button>
     </div>
-    <div class="np-progress" onclick="seekAudio(event)">
-      <div class="np-progress-fill" id="np-progress-fill"></div>
-    </div>
+    <div class="preview-hint">Paste any URL — YouTube, SoundCloud, Spotify track, or direct audio file. Plays right here every time you open this album.</div>
   </div>
-  <div class="preview-tracks" id="preview-tracks">
-    <div class="preview-loading">Loading tracks2026</div>
-  </div>
+  <div id="preview-player-wrap" class="preview-player-wrap" style="display:none;"></div>
 </div>
 
 <div id="toast"></div>
@@ -577,6 +595,7 @@ const GIST_TOKEN_KEY = 'wax_gist_token';
 const GIST_ID_KEY    = 'wax_gist_id';
 const SETUP_KEY      = 'wax_setup_v3';
 const GIST_FILE      = 'wax-albums.json';
+const HIDDEN_KEY     = 'wax_hidden_albums';
 
 let albums = [], spotifyToken = null, gistToken = null, gistId = null;
 let currentFilter = 'all', currentSort = 'added', listenedCollapsed = false;
@@ -995,7 +1014,7 @@ function card(a) {
     <div class="cover-wrap" onclick="openPreview('${a.id}')">
       ${a.image?`<img class="cover-img" src="${a.image}" alt="${esc(a.name)}" loading="lazy">`:`<div class="cover-placeholder">🎵</div>`}
       <div class="overlay">
-        <button class="o-btn preview-btn" onclick="openPreview('${a.id}');event.stopPropagation()">▷ Preview Tracks</button>
+        <button class="o-btn preview-btn" onclick="openPreview('${a.id}');event.stopPropagation()">▷ Set Preview</button>
         <button class="o-btn ${a.listened?'done':''}" onclick="toggleListened('${a.id}',event)">${a.listened?'✓ Listened':'Mark Listened'}</button>
         ${a.listened?`<button class="o-btn" style="background:rgba(200,169,110,0.12);border-color:rgba(200,169,110,0.3);color:var(--accent);" onclick="relisten('${a.id}',event)">↺ Relisten</button>`:''}
         ${a.spotifyUrl?`<button class="o-btn spotify" onclick="openSpotify('${a.spotifyUrl}',event)">Open in Spotify</button>`:''}
@@ -1185,9 +1204,13 @@ async function openArtistPage(artistId, artistName, e) {
 }
 
 function renderArtistGrid(discography, artistName, artistId) {
+  const hidden = loadHidden();
+  const hiddenIds = new Set(hidden[artistId] || []);
+  const visibleDiscography = discography.filter(a => !hiddenIds.has(a.id));
   const listenedIds = new Set(albums.filter(a => a.listened).map(a => a.id));
   const wantIds = new Set(albums.filter(a => !a.listened).map(a => a.id));
   const myIds = new Set(albums.map(a => a.id));
+  discography = visibleDiscography;
 
   const listenedCount = discography.filter(a => listenedIds.has(a.id)).length;
   const total = discography.length;
@@ -1215,7 +1238,7 @@ function renderArtistGrid(discography, artistName, artistId) {
     const albumData = JSON.stringify({ id:a.id, name:a.name, artist:artistName, artistId, year, image:img, spotifyUrl:a.external_urls?.spotify||'', listened:false, addedAt:Date.now() });
     const albumDataListened = JSON.stringify({ id:a.id, name:a.name, artist:artistName, artistId, year, image:img, spotifyUrl:a.external_urls?.spotify||'', listened:true, addedAt:Date.now() });
 
-    return `<div class="ar-card ${isListened?'ar-listened':''} ${isWant?'ar-want':''}">
+    return `<div class="ar-card ${isListened?'ar-listened':''} ${isWant?'ar-want':''}" data-id="${a.id}">
       <div class="ar-cover-wrap">
         ${img ? `<img class="ar-cover" src="${img}" alt="${esc(a.name)}" loading="lazy">` : `<div class="ar-cover" style="background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:2rem;">🎵</div>`}
         ${isListened ? `<div class="ar-listened-badge"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
@@ -1230,6 +1253,7 @@ function renderArtistGrid(discography, artistName, artistId) {
                  <button class="o-btn" style="background:#2a5c3a;border-color:#3d7a50;" onclick='artistAddListened(${JSON.stringify(albumDataListened)},event)'><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg> Mark Listened</button>`
           }
           ${a.external_urls?.spotify ? `<button class="o-btn spotify" onclick="window.open('${a.external_urls.spotify}','_blank');event.stopPropagation()">Open in Spotify</button>` : ''}
+          <button class="o-btn hide" onclick="hideArtistAlbum('${artistId}','${a.id}',event)">Hide from View</button>
         </div>
       </div>
       <div class="ar-info">
@@ -1239,7 +1263,10 @@ function renderArtistGrid(discography, artistName, artistId) {
     </div>`;
   }).join('')}</div>`;
 
-  document.getElementById('artist-grid-wrap').innerHTML = html;
+  // Append hidden toggle
+  const hiddenCount = (hidden[artistId] || []).length;
+  const hiddenHTML = hiddenCount > 0 ? getHiddenToggleHTML(artistId, hidden[artistId], false) : '';
+  document.getElementById('artist-grid-wrap').innerHTML = html + '<div id="hidden-toggle-wrap">' + hiddenHTML + '</div>';
 }
 
 function artistAddWant(jsonStr, e) {
@@ -1249,13 +1276,7 @@ function artistAddWant(jsonStr, e) {
   a.addedAt = Date.now(); albums.unshift(a);
   saveAlbums(); updateStats(); scheduleSync();
   showToast(`Added "${a.name}" to Listen Later`);
-  // Re-render artist page to reflect change
-  document.getElementById('artist-grid-wrap').innerHTML = '<div class="artist-loading">Updating…</div>';
-  setTimeout(() => {
-    const name = document.getElementById('artist-page-name').textContent;
-    const id = a.artistId || '';
-    openArtistPage(id, name, null);
-  }, 300);
+  updateArtistCard(a.id, 'want');
 }
 
 function artistAddListened(jsonStr, e) {
@@ -1265,8 +1286,7 @@ function artistAddListened(jsonStr, e) {
   a.addedAt = Date.now(); a.listenedAt = Date.now(); a.listenHistory = [a.listenedAt];
   albums.unshift(a); saveAlbums(); updateStats(); scheduleSync();
   showToast(`Added "${a.name}" to Listened`);
-  document.getElementById('artist-grid-wrap').innerHTML = '<div class="artist-loading">Updating…</div>';
-  setTimeout(() => { openArtistPage(a.artistId||'', document.getElementById('artist-page-name').textContent, null); }, 300);
+  updateArtistCard(a.id, 'listened');
 }
 
 function artistMarkListened(jsonStr, e) {
@@ -1279,8 +1299,7 @@ function artistMarkListened(jsonStr, e) {
     saveAlbums(); updateStats(); scheduleSync();
   }
   showToast(`✓ Marked as listened`);
-  document.getElementById('artist-grid-wrap').innerHTML = '<div class="artist-loading">Updating…</div>';
-  setTimeout(() => { openArtistPage(a.artistId||'', document.getElementById('artist-page-name').textContent, null); }, 300);
+  updateArtistCard(a.id, 'listened');
 }
 
 function artistRelisten(albumId, e) {
@@ -1293,12 +1312,130 @@ function artistRelisten(albumId, e) {
   showToast(`↺ Relisten logged — × ${a.listenHistory.length}`);
 }
 
+function updateArtistCard(albumId, state) {
+  // Update card in-place without reloading the whole artist page
+  const card = document.querySelector(`.ar-card[data-id="${albumId}"]`);
+  if (!card) return;
+
+  // Update visual state
+  if (state === 'listened') {
+    card.classList.add('ar-listened');
+    card.classList.remove('ar-want');
+    // Add checkmark badge if not there
+    const wrap = card.querySelector('.ar-cover-wrap');
+    if (wrap && !wrap.querySelector('.ar-listened-badge')) {
+      const badge = document.createElement('div');
+      badge.className = 'ar-listened-badge';
+      badge.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      wrap.appendChild(badge);
+    }
+    // Update overlay buttons
+    const overlay = card.querySelector('.ar-overlay');
+    if (overlay) {
+      overlay.innerHTML = `<button class="o-btn done" onclick="event.stopPropagation()">✓ Listened</button>
+        <button class="o-btn" style="background:rgba(200,169,110,0.12);border-color:rgba(200,169,110,0.3);color:var(--accent);" onclick="artistRelisten('${albumId}',event)">↺ Relisten</button>`;
+    }
+  } else if (state === 'want') {
+    card.classList.add('ar-want');
+    const overlay = card.querySelector('.ar-overlay');
+    if (overlay) {
+      const spotifyBtn = overlay.querySelector('.spotify');
+      overlay.innerHTML = `<button class="o-btn done" onclick="event.stopPropagation()">★ In Listen Later</button>`;
+      if (spotifyBtn) overlay.appendChild(spotifyBtn);
+    }
+  }
+
+  // Update progress bar
+  const listenedCount = document.querySelectorAll('.ar-card.ar-listened').length;
+  const total = document.querySelectorAll('.ar-card').length;
+  const pct = total ? Math.round((listenedCount / total) * 100) : 0;
+  const progressText = document.getElementById('artist-progress-text');
+  const progressFill = document.getElementById('artist-progress-fill');
+  if (progressText) progressText.textContent = `${listenedCount} of ${total} albums listened — ${pct}%`;
+  if (progressFill) progressFill.style.width = pct + '%';
+}
+
 function closeArtistPage() {
   document.getElementById('artist-page').classList.remove('open');
   renderGrid(); // refresh main grid in case changes were made
 }
 
 function loadAlbums() { try { return JSON.parse(localStorage.getItem(ALBUMS_KEY)) || []; } catch { return []; } }
+function loadHidden() { try { return JSON.parse(localStorage.getItem(HIDDEN_KEY)) || {}; } catch { return {}; } }
+function saveHidden(h) { localStorage.setItem(HIDDEN_KEY, JSON.stringify(h)); }
+
+function hideArtistAlbum(artistId, albumId, e) {
+  e.stopPropagation();
+  const hidden = loadHidden();
+  if (!hidden[artistId]) hidden[artistId] = [];
+  if (!hidden[artistId].includes(albumId)) hidden[artistId].push(albumId);
+  saveHidden(hidden);
+  // Remove card from view with fade
+  const card = document.querySelector(`.ar-card[data-id="${albumId}"]`);
+  if (card) { card.style.transition = 'opacity 0.3s'; card.style.opacity = '0'; setTimeout(() => { card.remove(); refreshHiddenToggle(artistId); }, 300); }
+  showToast('Hidden from discography');
+}
+
+function unhideArtistAlbum(artistId, albumId, e) {
+  e.stopPropagation();
+  const hidden = loadHidden();
+  if (hidden[artistId]) hidden[artistId] = hidden[artistId].filter(id => id !== albumId);
+  saveHidden(hidden);
+  // Re-render the artist page to show the unhidden album
+  const name = document.getElementById('artist-page-name').textContent;
+  openArtistPage(artistId, name, null);
+  showToast('Restored to discography');
+}
+
+function refreshHiddenToggle(artistId) {
+  const hidden = loadHidden();
+  const hiddenIds = hidden[artistId] || [];
+  const toggleEl = document.getElementById('hidden-toggle-wrap');
+  if (toggleEl) {
+    if (hiddenIds.length > 0) {
+      toggleEl.innerHTML = getHiddenToggleHTML(artistId, hiddenIds, false);
+    } else {
+      toggleEl.innerHTML = '';
+    }
+  }
+}
+
+function getHiddenToggleHTML(artistId, hiddenIds, expanded) {
+  if (!hiddenIds.length) return '';
+  return `<div class="hidden-toggle" onclick="toggleHiddenSection('${artistId}', this)">
+    ${expanded ? '▲' : '▼'} ${hiddenIds.length} hidden album${hiddenIds.length !== 1 ? 's' : ''} — click to ${expanded ? 'collapse' : 'show'}
+  </div>
+  <div id="hidden-albums-grid" style="display:${expanded ? 'block' : 'none'};" class="hidden-grid">
+    <div class="album-grid" style="padding:0 1rem;">
+      ${hiddenIds.map(hid => {
+        // Try to find album info from the page's current discography data
+        const card = document.querySelector('.ar-card[data-id="' + hid + '"]');
+        const name = card ? card.querySelector('.ar-name')?.textContent : hid;
+        const year = card ? card.querySelector('.ar-year')?.textContent : '';
+        const img = card ? card.querySelector('.ar-cover')?.src : '';
+        return '<div class="ar-card ar-hidden" data-id="' + hid + '" style="position:relative;">' +
+          '<div class="ar-cover-wrap">' +
+          (img ? '<img class="ar-cover" src="' + img + '">' : '<div class="ar-cover" style="background:var(--bg3);aspect-ratio:1;"></div>') +
+          '<div class="ar-overlay">' +
+          '<button class="o-btn unhide" onclick="unhideArtistAlbum('' + artistId + '','' + hid + '',event)">↩ Unhide</button>' +
+          '</div></div>' +
+          '<div class="ar-info"><div class="ar-name">' + name + '</div><div class="ar-year">' + year + '</div></div>' +
+          '</div>';
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function toggleHiddenSection(artistId, btn) {
+  const grid = document.getElementById('hidden-albums-grid');
+  if (!grid) return;
+  const expanded = grid.style.display !== 'none';
+  grid.style.display = expanded ? 'none' : 'block';
+  const hidden = loadHidden();
+  const hiddenIds = hidden[artistId] || [];
+  const count = hiddenIds.length;
+  btn.textContent = (expanded ? '▼' : '▲') + ' ' + count + ' hidden album' + (count !== 1 ? 's' : '') + ' — click to ' + (expanded ? 'show' : 'collapse');
+}
 function saveAlbums() { localStorage.setItem(ALBUMS_KEY, JSON.stringify(albums)); }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 let toastTimer;
