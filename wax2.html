@@ -1140,39 +1140,41 @@ async function openArtistPage(artistId, artistName, e) {
   }
 
   try {
-    // Fetch all albums (paginate up to 100)
+    // Fetch albums in pages of 20
     let allAlbums = [], offset = 0;
     while (true) {
       const resp = await fetch(`https://api.spotify.com/v1/artists/${id}/albums?include_groups=album&limit=20&offset=${offset}`, {
         headers: { 'Authorization': `Bearer ${spotifyToken}` }
       });
+      if (!resp.ok) { console.error('Artist albums fetch failed:', resp.status); break; }
       const data = await resp.json();
+      console.log('Fetched', data.items?.length, 'albums at offset', offset, 'total so far:', allAlbums.length + (data.items?.length||0));
       allAlbums = allAlbums.concat(data.items || []);
-      if (!data.next) break;
-      offset += 50;
+      if (!data.next || allAlbums.length >= 100) break;
+      offset += 20;
     }
 
-    // Deduplicate by name (keep earliest release), filter obvious non-studio
+    console.log('Total albums fetched:', allAlbums.length);
+
+    // Deduplicate by normalised name, keep earliest release date
     const seen = new Map();
-    const SKIP = /\b(deluxe|remaster(ed)?|anniversary|expanded|bonus|live|acoustic|session|demo|karaoke|tribute|collector|super edition|\d{4} mix|\d{4} remaster)\b/i;
     allAlbums.forEach(a => {
       const key = a.name.toLowerCase().replace(/[^a-z0-9]/g,'');
-      if (!seen.has(key)) seen.set(key, a);
-      else {
-        // Keep the earlier release
-        const existing = seen.get(key);
-        if (a.release_date < existing.release_date) seen.set(key, a);
-      }
+      const existing = seen.get(key);
+      if (!existing || a.release_date < existing.release_date) seen.set(key, a);
     });
 
-    // Sort chronologically, filter obvious non-studio
+    // Filter only obvious non-studio editions — be conservative
+    const SKIP = /(deluxe|remastered|anniversary edition|expanded edition|live at|live from|unplugged|acoustic version)/i;
     let discography = Array.from(seen.values())
       .filter(a => !SKIP.test(a.name))
-      .sort((a, b) => a.release_date.localeCompare(b.release_date));
+      .sort((a, b) => (a.release_date||'').localeCompare(b.release_date||''));
 
+    console.log('After dedup+filter:', discography.length, 'albums');
     renderArtistGrid(discography, artistName, id);
   } catch(err) {
-    document.getElementById('artist-grid-wrap').innerHTML = '<div class="artist-loading">Failed to load discography.</div>';
+    console.error('Artist page error:', err);
+    document.getElementById('artist-grid-wrap').innerHTML = '<div class="artist-loading">Failed to load discography: ' + err.message + '</div>';
   }
 }
 
