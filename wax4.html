@@ -267,6 +267,22 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
 .play-badge svg { color: #1a1713; margin-left: 1px; }
 .a-card.has-preview .play-badge { display: flex; }
 
+/* Playing indicator - animated bars */
+.now-playing-indicator {
+  position: absolute; bottom: 6px; right: 6px;
+  display: none; align-items: flex-end; gap: 2px;
+  height: 16px; z-index: 3;
+}
+.a-card.now-playing .now-playing-indicator { display: flex; }
+.np-bar {
+  width: 3px; background: var(--accent); border-radius: 2px;
+  animation: npBar 0.8s ease-in-out infinite alternate;
+}
+.np-bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+.np-bar:nth-child(2) { height: 12px; animation-delay: 0.2s; }
+.np-bar:nth-child(3) { height: 8px; animation-delay: 0.4s; }
+@keyframes npBar { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }
+
 /* SORT BAR */
 .sort-bar { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1.25rem; border-bottom: 1px solid var(--border); overflow-x: auto; background: var(--bg); }
 .sort-bar::-webkit-scrollbar { display: none; }
@@ -453,6 +469,176 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
   margin-top: 0.4rem; overflow: hidden;
 }
 .artist-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+
+/* ── ALBUM DETAIL PAGE ── */
+#album-page {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 260;
+  overflow-y: auto;
+  flex-direction: column;
+  animation: fadeSlideUp 0.22s ease;
+}
+#album-page.open { display: flex; }
+@keyframes fadeSlideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+
+.ap-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  position: sticky;
+  top: 0;
+  background: rgba(14,12,10,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+.ap-back {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0.2rem;
+  flex-shrink: 0;
+}
+.ap-back:hover { color: var(--text); }
+.ap-header-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; font-weight: 400;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1;
+}
+.ap-header-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.ap-header-btn {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 0.4rem 0.75rem;
+  color: var(--muted); font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem; cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.ap-header-btn:hover { color: var(--text); border-color: var(--border2); }
+.ap-header-btn.listened { background: var(--green-bg); border-color: var(--green); color: #a0d4b4; }
+.ap-header-btn.spotify { color: #1ED760; border-color: rgba(30,215,96,0.3); background: rgba(30,215,96,0.07); }
+
+/* Hero section */
+.ap-hero {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem 1.25rem 1rem;
+  align-items: flex-start;
+}
+.ap-cover {
+  width: 140px; height: 140px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  background: var(--bg3);
+}
+.ap-hero-info { flex: 1; min-width: 0; padding-top: 0.25rem; }
+.ap-album-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 400;
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+}
+.ap-artist-link {
+  font-size: 0.9rem; color: var(--accent);
+  cursor: pointer; display: inline-block; margin-bottom: 0.35rem;
+}
+.ap-artist-link:hover { text-decoration: underline; }
+.ap-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.75rem; }
+.ap-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ap-badge {
+  font-size: 0.7rem; padding: 0.2rem 0.6rem;
+  border-radius: 20px; border: 1px solid var(--border2);
+  color: var(--muted);
+}
+.ap-badge.listened { background: var(--green-bg); border-color: var(--green); color: #a0d4b4; }
+.ap-badge.want { background: rgba(200,169,110,0.1); border-color: rgba(200,169,110,0.3); color: var(--accent); }
+.ap-badge.count { color: var(--accent); border-color: rgba(200,169,110,0.3); }
+
+/* Preview player */
+.ap-preview-section {
+  margin: 0 1.25rem 1rem;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.ap-preview-label {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.75rem; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+}
+.ap-preview-label button {
+  background: none; border: none; color: var(--accent);
+  font-size: 0.75rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+.ap-preview-label button:hover { text-decoration: underline; }
+.ap-preview-player { padding: 0.75rem; }
+.ap-preview-player iframe { width: 100%; border: none; border-radius: var(--radius-sm); }
+.ap-preview-player audio { width: 100%; height: 36px; accent-color: var(--accent); }
+.ap-preview-empty {
+  padding: 1rem 0.85rem;
+  font-size: 0.82rem; color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ap-set-preview-btn {
+  background: var(--accent); color: #1a1713;
+  border: none; border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+  font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+  font-weight: 500; cursor: pointer; transition: background 0.15s;
+}
+.ap-set-preview-btn:hover { background: var(--accent2); }
+
+/* URL input (shown when editing) */
+.ap-url-edit {
+  padding: 0.65rem 0.85rem;
+  display: none;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.ap-url-edit.open { display: flex; }
+.ap-url-edit input {
+  flex: 1; min-width: 0;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 0.45rem 0.65rem;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+  outline: none;
+}
+.ap-url-edit input:focus { border-color: var(--accent); }
+.ap-url-edit button {
+  background: var(--accent); color: #1a1713; border: none;
+  border-radius: var(--radius-sm); padding: 0.45rem 0.85rem;
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+  font-weight: 500; cursor: pointer;
+}
+
+/* Tracklist */
+.ap-tracklist {
+  margin: 0 1.25rem 4rem;
+}
+.ap-tracklist-label {
+  font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.ap-track {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.ap-track:last-child { border-bottom: none; }
+.ap-track-num { font-size: 0.72rem; color: var(--muted); width: 20px; text-align: right; flex-shrink: 0; }
+.ap-track-name { flex: 1; font-size: 0.85rem; }
+.ap-track-dur { font-size: 0.72rem; color: var(--muted); flex-shrink: 0; }
+.ap-loading { text-align: center; padding: 3rem; color: var(--muted); font-size: 0.9rem; }
+
 </style>
 </head>
 <body>
@@ -529,6 +715,38 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
     <div id="search-results"></div>
   </div>
   <div id="grid-wrap"></div>
+</div>
+
+<!-- ALBUM DETAIL PAGE -->
+<div id="album-page">
+  <div class="ap-header">
+    <button class="ap-back" onclick="closeAlbumPage()">←</button>
+    <div class="ap-header-title" id="ap-header-title"></div>
+    <div class="ap-header-actions" id="ap-header-actions"></div>
+  </div>
+  <div class="ap-hero">
+    <img class="ap-cover" id="ap-cover" src="" alt="">
+    <div class="ap-hero-info">
+      <div class="ap-album-title" id="ap-album-title"></div>
+      <div class="ap-artist-link" id="ap-artist-link" onclick="apOpenArtist()"></div>
+      <div class="ap-meta" id="ap-meta"></div>
+      <div class="ap-badges" id="ap-badges"></div>
+    </div>
+  </div>
+  <div class="ap-preview-section" id="ap-preview-section">
+    <div class="ap-preview-label">
+      <span>Preview Track</span>
+      <button onclick="toggleApUrlEdit()">Edit URL</button>
+    </div>
+    <div id="ap-preview-content"></div>
+    <div class="ap-url-edit" id="ap-url-edit">
+      <input type="url" id="ap-url-input" placeholder="Paste YouTube, SoundCloud, Spotify or audio URL…">
+      <button onclick="saveApPreviewUrl()">Save</button>
+    </div>
+  </div>
+  <div class="ap-tracklist" id="ap-tracklist">
+    <div class="ap-loading">Loading tracklist…</div>
+  </div>
 </div>
 
 <!-- ARTIST PAGE -->
@@ -1011,10 +1229,15 @@ function card(a) {
   const artistId = a.artistId || '';
   const artistName = (a.artist || '').replace(/'/g, "\\'");
   return `<div class="a-card ${a.listened?'listened':''} ${a.previewUrl?'has-preview':''}" data-id="${a.id}" data-artist-id="${a.artistId||''}" data-artist="${esc(a.artist)}">
-    <div class="cover-wrap" onclick="openPreview('${a.id}')">
+    <div class="cover-wrap" onclick="openAlbumPage('${a.id}')"
+      onmouseenter="hoverPreviewStart('${a.id}')"
+      onmouseleave="hoverPreviewStop()"
+      ontouchstart="touchPreviewStart('${a.id}', event)"
+      ontouchend="touchPreviewStop(event)"
+      ontouchcancel="touchPreviewStop(event)">
       ${a.image?`<img class="cover-img" src="${a.image}" alt="${esc(a.name)}" loading="lazy">`:`<div class="cover-placeholder">🎵</div>`}
       <div class="overlay">
-        <button class="o-btn preview-btn" onclick="event.stopPropagation();forceOpenPreview('${a.id}')">▷ Set Preview</button>
+        <button class="o-btn preview-btn" onclick="event.stopPropagation();openAlbumPage('${a.id}')">▷ View Album</button>
         <button class="o-btn ${a.listened?'done':''}" onclick="toggleListened('${a.id}',event)">${a.listened?'✓ Listened':'Mark Listened'}</button>
         ${a.listened?`<button class="o-btn" style="background:rgba(200,169,110,0.12);border-color:rgba(200,169,110,0.3);color:var(--accent);" onclick="relisten('${a.id}',event)">↺ Relisten</button>`:''}
         ${a.spotifyUrl?`<button class="o-btn spotify" onclick="openSpotify('${a.spotifyUrl}',event)">Open in Spotify</button>`:''}
@@ -1024,6 +1247,9 @@ function card(a) {
       ${a.listened?`<div class="listen-count" onclick="showHistory('${a.id}',event)" title="Listen history">× ${listenCount}</div>`:''}
       <div class="play-badge" onclick="openAndPlay('${a.id}',event)" title="Play preview">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      </div>
+      <div class="now-playing-indicator">
+        <div class="np-bar"></div><div class="np-bar"></div><div class="np-bar"></div>
       </div>
     </div>
     <div class="a-info">
@@ -1360,6 +1586,154 @@ function closeArtistPage() {
   renderGrid(); // refresh main grid in case changes were made
 }
 
+// ── ALBUM DETAIL PAGE ──
+let apCurrentAlbumId = null;
+let apCurrentArtistId = null;
+let apCurrentArtistName = null;
+
+function openAlbumPage(albumId) {
+  const album = albums.find(a => a.id === albumId);
+  if (!album) return;
+  apCurrentAlbumId = albumId;
+  apCurrentArtistId = album.artistId || null;
+  apCurrentArtistName = album.artist || '';
+
+  // Header
+  document.getElementById('ap-header-title').textContent = album.name;
+
+  // Hero
+  document.getElementById('ap-cover').src = album.image || '';
+  document.getElementById('ap-album-title').textContent = album.name;
+  document.getElementById('ap-artist-link').textContent = album.artist;
+  document.getElementById('ap-meta').textContent = [album.year, album.genre].filter(Boolean).join(' · ');
+
+  // Badges
+  const listenCount = (album.listenHistory||[]).length || (album.listened ? 1 : 0);
+  const badges = [];
+  if (album.listened) badges.push('<span class="ap-badge listened">✓ Listened</span>');
+  else if (!album.listened && albums.some(a=>a.id===albumId)) badges.push('<span class="ap-badge want">★ Listen Later</span>');
+  if (album.listened && listenCount > 1) badges.push(`<span class="ap-badge count">× ${listenCount} listens</span>`);
+  document.getElementById('ap-badges').innerHTML = badges.join('');
+
+  // Header actions
+  const actions = [];
+  if (album.listened) {
+    actions.push(`<button class="ap-header-btn" onclick="apRelisten()">↺ Relisten</button>`);
+  } else {
+    actions.push(`<button class="ap-header-btn listened" onclick="apMarkListened()">✓ Mark Listened</button>`);
+  }
+  if (album.spotifyUrl) {
+    actions.push(`<button class="ap-header-btn spotify" onclick="window.open('${album.spotifyUrl}','_blank')">Spotify ↗</button>`);
+  }
+  document.getElementById('ap-header-actions').innerHTML = actions.join('');
+
+  // Preview
+  apRenderPreview(album);
+
+  // Tracklist (async)
+  document.getElementById('ap-tracklist').innerHTML = '<div class="ap-loading">Loading tracklist…</div>';
+
+  // Show page
+  document.getElementById('album-page').classList.add('open');
+
+  // Fetch tracklist
+  apFetchTracklist(albumId);
+}
+
+function apRenderPreview(album) {
+  const content = document.getElementById('ap-preview-content');
+  const urlEdit = document.getElementById('ap-url-edit');
+  urlEdit.classList.remove('open');
+  document.getElementById('ap-url-input').value = album.previewUrl || '';
+
+  if (album.previewUrl) {
+    content.innerHTML = '<div class="ap-preview-player">' + apBuildPlayer(album.previewUrl) + '</div>';
+  } else {
+    content.innerHTML = `<div class="ap-preview-empty">
+      <span>No preview set</span>
+      <button class="ap-set-preview-btn" onclick="toggleApUrlEdit()">+ Set Preview URL</button>
+    </div>`;
+  }
+}
+
+function apBuildPlayer(url) {
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return `<iframe src="https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1" height="160" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  if (url.includes('soundcloud.com')) return `<iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23c8a96e&auto_play=true&hide_related=true&show_comments=false" height="100" allow="autoplay"></iframe>`;
+  const spMatch = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/);
+  if (spMatch) return `<iframe src="https://open.spotify.com/embed/track/${spMatch[1]}" height="80" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+  return `<audio controls autoplay src="${url}" style="width:100%;height:36px;accent-color:var(--accent);"></audio>`;
+}
+
+function toggleApUrlEdit() {
+  document.getElementById('ap-url-edit').classList.toggle('open');
+}
+
+function saveApPreviewUrl() {
+  const url = document.getElementById('ap-url-input').value.trim();
+  if (!url) { showToast('Paste a URL first'); return; }
+  const album = albums.find(a => a.id === apCurrentAlbumId);
+  if (!album) return;
+  album.previewUrl = url;
+  saveAlbums(); renderGrid(); scheduleSync();
+  apRenderPreview(album);
+  showToast('Preview saved ✓');
+}
+
+async function apFetchTracklist(albumId) {
+  if (!spotifyToken) { document.getElementById('ap-tracklist').innerHTML = '<div class="ap-loading">Connect Spotify to see tracklist</div>'; return; }
+  try {
+    const resp = await fetch(`https://api.spotify.com/v1/albums/${albumId}/tracks?limit=10`, {
+      headers: { 'Authorization': `Bearer ${spotifyToken}` }
+    });
+    if (!resp.ok) { document.getElementById('ap-tracklist').innerHTML = ''; return; }
+    const data = await resp.json();
+    const tracks = data.items || [];
+    document.getElementById('ap-tracklist').innerHTML =
+      `<div class="ap-tracklist-label">Tracklist</div>` +
+      tracks.map((t, i) => {
+        const mins = Math.floor((t.duration_ms||0)/60000);
+        const secs = String(Math.floor(((t.duration_ms||0)%60000)/1000)).padStart(2,'0');
+        return `<div class="ap-track">
+          <div class="ap-track-num">${t.track_number||i+1}</div>
+          <div class="ap-track-name">${esc(t.name)}</div>
+          <div class="ap-track-dur">${mins}:${secs}</div>
+        </div>`;
+      }).join('');
+  } catch { document.getElementById('ap-tracklist').innerHTML = ''; }
+}
+
+function apMarkListened() {
+  const album = albums.find(a => a.id === apCurrentAlbumId); if (!album) return;
+  album.listened = true; album.listenedAt = Date.now();
+  if (!album.listenHistory) album.listenHistory = [album.listenedAt];
+  saveAlbums(); renderGrid(); updateStats(); scheduleSync();
+  // Refresh page state
+  openAlbumPage(apCurrentAlbumId);
+  showToast('✓ Marked as listened');
+}
+
+function apRelisten() {
+  const album = albums.find(a => a.id === apCurrentAlbumId); if (!album) return;
+  const now = Date.now();
+  if (!album.listenHistory) album.listenHistory = album.listenedAt ? [album.listenedAt] : [];
+  album.listenHistory.push(now); album.listenedAt = now; album.relistenedAt = now;
+  saveAlbums(); renderGrid(); scheduleSync();
+  openAlbumPage(apCurrentAlbumId);
+  showToast(`↺ Relisten logged — × ${album.listenHistory.length}`);
+}
+
+function apOpenArtist() {
+  if (apCurrentArtistId || apCurrentArtistName) {
+    openArtistPage(apCurrentArtistId || '', apCurrentArtistName, null);
+  }
+}
+
+function closeAlbumPage() {
+  document.getElementById('album-page').classList.remove('open');
+  apCurrentAlbumId = null;
+}
+
 function loadAlbums() { try { return JSON.parse(localStorage.getItem(ALBUMS_KEY)) || []; } catch { return []; } }
 function loadHidden() { try { return JSON.parse(localStorage.getItem(HIDDEN_KEY)) || {}; } catch { return {}; } }
 function saveHidden(h) { localStorage.setItem(HIDDEN_KEY, JSON.stringify(h)); }
@@ -1449,6 +1823,97 @@ function showToast(msg) {
 <script>
 // ── PREVIEW PLAYER (URL-based) ──
 let currentPreviewAlbumId = null;
+
+// ── HOVER / HOLD PREVIEW ──
+let hoverAudio = null;
+let hoverTimer = null;
+let hoverAlbumId = null;
+let touchTimer = null;
+const HOVER_DELAY = 600;   // ms before hover starts playing
+const TOUCH_DELAY = 500;   // ms hold before playing
+
+function hoverPreviewStart(albumId) {
+  const album = albums.find(a => a.id === albumId);
+  if (!album || !album.previewUrl) return;
+  hoverTimer = setTimeout(() => playHoverPreview(albumId, album.previewUrl), HOVER_DELAY);
+}
+
+function hoverPreviewStop() {
+  clearTimeout(hoverTimer);
+  stopHoverPreview();
+}
+
+function touchPreviewStart(albumId, e) {
+  const album = albums.find(a => a.id === albumId);
+  if (!album || !album.previewUrl) return;
+  touchTimer = setTimeout(() => {
+    e.preventDefault(); // prevent click firing after long press
+    playHoverPreview(albumId, album.previewUrl);
+  }, TOUCH_DELAY);
+}
+
+function touchPreviewStop(e) {
+  clearTimeout(touchTimer);
+  if (hoverAlbumId) {
+    e.preventDefault(); // prevent click if we were playing
+    stopHoverPreview();
+  }
+}
+
+function playHoverPreview(albumId, url) {
+  stopHoverPreview();
+  hoverAlbumId = albumId;
+  hoverAudio = new Audio();
+
+  // For direct audio URLs only — can't hover-play YouTube/SoundCloud iframes
+  const isDirect = url.match(/\.(mp3|ogg|wav|m4a|aac|flac)(\?.*)?$/i);
+  const spMatch = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/);
+
+  if (isDirect) {
+    hoverAudio.src = url;
+    hoverAudio.volume = 0;
+    hoverAudio.play().catch(()=>{});
+    // Fade in
+    fadeAudio(hoverAudio, 0, 0.8, 400);
+    hoverAudio.addEventListener('ended', stopHoverPreview);
+  } else {
+    // For YouTube/SoundCloud/Spotify — open album page which auto-plays
+    hoverAudio = null;
+    openAlbumPage(albumId);
+    return;
+  }
+
+  // Mark card as now playing
+  document.querySelectorAll('.a-card').forEach(el => el.classList.remove('now-playing'));
+  const card = document.querySelector(`.a-card[data-id="${albumId}"]`);
+  if (card) card.classList.add('now-playing');
+}
+
+function stopHoverPreview() {
+  if (hoverAudio) {
+    fadeAudio(hoverAudio, hoverAudio.volume, 0, 300, () => {
+      hoverAudio.pause();
+      hoverAudio = null;
+    });
+  }
+  hoverAlbumId = null;
+  document.querySelectorAll('.a-card').forEach(el => el.classList.remove('now-playing'));
+}
+
+function fadeAudio(audio, from, to, duration, cb) {
+  const steps = 20;
+  const stepTime = duration / steps;
+  const stepSize = (to - from) / steps;
+  let step = 0;
+  const interval = setInterval(() => {
+    step++;
+    audio.volume = Math.max(0, Math.min(1, from + stepSize * step));
+    if (step >= steps) {
+      clearInterval(interval);
+      if (cb) cb();
+    }
+  }, stepTime);
+}
 
 function forceOpenPreview(albumId) {
   currentPreviewAlbumId = null;
