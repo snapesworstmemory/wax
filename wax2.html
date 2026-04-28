@@ -989,8 +989,8 @@ function renderGrid() {
 
 function card(a) {
   const listenCount = (a.listenHistory||[]).length || (a.listened ? 1 : 0);
-  return `<div class="a-card ${a.listened?'listened':''} ${a.previewUrl?'has-preview':''}" data-id="${a.id}" onclick="openPreview('${a.id}')">
-    <div class="cover-wrap">
+  return `<div class="a-card ${a.listened?'listened':''} ${a.previewUrl?'has-preview':''}" data-id="${a.id}">
+    <div class="cover-wrap" onclick="openPreview('${a.id}')">
       ${a.image?`<img class="cover-img" src="${a.image}" alt="${esc(a.name)}" loading="lazy">`:`<div class="cover-placeholder">🎵</div>`}
       <div class="overlay">
         <button class="o-btn preview-btn" onclick="openPreview('${a.id}');event.stopPropagation()">▷ Preview Tracks</button>
@@ -1007,7 +1007,7 @@ function card(a) {
     </div>
     <div class="a-info">
       <div class="a-name">${esc(a.name)}</div>
-      <div class="a-artist" onclick="openArtistPage(a.artistId,a.artist,event)">${esc(a.artist)}</div>
+      <div class="a-artist" onclick="event.stopPropagation();openArtistPage('${a.artistId||''}','${esc(a.artist)}',event)">${esc(a.artist)}</div>
       ${a.year?`<div class="a-year">${a.year}</div>`:''}
     </div>
   </div>`;
