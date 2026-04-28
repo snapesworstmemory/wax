@@ -1417,7 +1417,7 @@ function getHiddenToggleHTML(artistId, hiddenIds, expanded) {
           '<div class="ar-cover-wrap">' +
           (img ? '<img class="ar-cover" src="' + img + '">' : '<div class="ar-cover" style="background:var(--bg3);aspect-ratio:1;"></div>') +
           '<div class="ar-overlay">' +
-          '<button class="o-btn unhide" onclick="unhideArtistAlbum('' + artistId + '','' + hid + '',event)">↩ Unhide</button>' +
+          '<button class="o-btn unhide" onclick="unhideArtistAlbum(\'' + artistId + '\',\'' + hid + '\',event)">↩ Unhide</button>' +
           '</div></div>' +
           '<div class="ar-info"><div class="ar-name">' + name + '</div><div class="ar-year">' + year + '</div></div>' +
           '</div>';
