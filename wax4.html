@@ -639,6 +639,36 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
 .ap-track-dur { font-size: 0.72rem; color: var(--muted); flex-shrink: 0; }
 .ap-loading { text-align: center; padding: 3rem; color: var(--muted); font-size: 0.9rem; }
 
+
+/* CARD ICON BUTTONS */
+.a-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+.a-icon-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+.a-icon-btn:hover { border-color: var(--border2); color: var(--text); }
+.a-icon-btn.listened { color: var(--green); border-color: rgba(90,158,114,0.35); background: var(--green-bg); }
+.a-icon-btn.relisten { color: var(--accent); border-color: rgba(200,169,110,0.3); }
+.a-icon-btn.spotify { color: #1ED760; border-color: rgba(30,215,96,0.25); }
+.a-icon-btn.remove { color: var(--red); border-color: rgba(224,92,92,0.25); }
+
 </style>
 </head>
 <body>
@@ -1226,36 +1256,34 @@ function renderGrid() {
 
 function card(a) {
   const listenCount = (a.listenHistory||[]).length || (a.listened ? 1 : 0);
-  const artistId = a.artistId || '';
-  const artistName = (a.artist || '').replace(/'/g, "\\'");
   return `<div class="a-card ${a.listened?'listened':''} ${a.previewUrl?'has-preview':''}" data-id="${a.id}" data-artist-id="${a.artistId||''}" data-artist="${esc(a.artist)}">
-    <div class="cover-wrap" onclick="openAlbumPage('${a.id}')"
+    <div class="cover-wrap"
+      onclick="openAlbumPage('${a.id}')"
       onmouseenter="hoverPreviewStart('${a.id}')"
       onmouseleave="hoverPreviewStop()"
       ontouchstart="touchPreviewStart('${a.id}', event)"
       ontouchend="touchPreviewStop(event)"
       ontouchcancel="touchPreviewStop(event)">
       ${a.image?`<img class="cover-img" src="${a.image}" alt="${esc(a.name)}" loading="lazy">`:`<div class="cover-placeholder">🎵</div>`}
-      <div class="overlay">
-        <button class="o-btn preview-btn" onclick="event.stopPropagation();openAlbumPage('${a.id}')">▷ View Album</button>
-        <button class="o-btn ${a.listened?'done':''}" onclick="toggleListened('${a.id}',event)">${a.listened?'✓ Listened':'Mark Listened'}</button>
-        ${a.listened?`<button class="o-btn" style="background:rgba(200,169,110,0.12);border-color:rgba(200,169,110,0.3);color:var(--accent);" onclick="relisten('${a.id}',event)">↺ Relisten</button>`:''}
-        ${a.spotifyUrl?`<button class="o-btn spotify" onclick="openSpotify('${a.spotifyUrl}',event)">Open in Spotify</button>`:''}
-        <button class="o-btn remove" onclick="removeAlbum('${a.id}',event)">Remove</button>
-      </div>
       <div class="done-badge">✓</div>
       ${a.listened?`<div class="listen-count" onclick="showHistory('${a.id}',event)" title="Listen history">× ${listenCount}</div>`:''}
-      <div class="play-badge" onclick="openAndPlay('${a.id}',event)" title="Play preview">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-      </div>
       <div class="now-playing-indicator">
         <div class="np-bar"></div><div class="np-bar"></div><div class="np-bar"></div>
       </div>
     </div>
     <div class="a-info">
-      <div class="a-name">${esc(a.name)}</div>
+      <div class="a-name" onclick="openAlbumPage('${a.id}')" style="cursor:pointer;">${esc(a.name)}</div>
       <div class="a-artist" onclick="handleArtistClick(event)">${esc(a.artist)}</div>
       ${a.year?`<div class="a-year">${a.year}</div>`:''}
+      <div class="a-card-actions">
+        ${a.listened
+          ? `<button class="a-icon-btn relisten" onclick="relisten('${a.id}',event)" title="Log relisten">↺ Relisten</button>
+             <button class="a-icon-btn listened" onclick="showHistory('${a.id}',event)" title="Listen history">✓ × ${listenCount}</button>`
+          : `<button class="a-icon-btn" onclick="toggleListened('${a.id}',event)" title="Mark as listened">✓ Listened</button>`
+        }
+        ${a.spotifyUrl?`<button class="a-icon-btn spotify" onclick="openSpotify('${a.spotifyUrl}',event)" title="Open in Spotify">♫</button>`:''}
+        <button class="a-icon-btn remove" onclick="removeAlbum('${a.id}',event)" title="Remove">✕</button>
+      </div>
     </div>
   </div>`;
 }
@@ -1871,10 +1899,8 @@ function playHoverPreview(albumId, url) {
 
   if (isDirect) {
     hoverAudio.src = url;
-    hoverAudio.volume = 0;
+    hoverAudio.volume = 0.8;
     hoverAudio.play().catch(()=>{});
-    // Fade in
-    fadeAudio(hoverAudio, 0, 0.8, 400);
     hoverAudio.addEventListener('ended', stopHoverPreview);
   } else {
     // For YouTube/SoundCloud/Spotify — open album page which auto-plays
@@ -1891,28 +1917,12 @@ function playHoverPreview(albumId, url) {
 
 function stopHoverPreview() {
   if (hoverAudio) {
-    fadeAudio(hoverAudio, hoverAudio.volume, 0, 300, () => {
-      hoverAudio.pause();
-      hoverAudio = null;
-    });
+    hoverAudio.pause();
+    hoverAudio.currentTime = 0;
+    hoverAudio = null;
   }
   hoverAlbumId = null;
   document.querySelectorAll('.a-card').forEach(el => el.classList.remove('now-playing'));
-}
-
-function fadeAudio(audio, from, to, duration, cb) {
-  const steps = 20;
-  const stepTime = duration / steps;
-  const stepSize = (to - from) / steps;
-  let step = 0;
-  const interval = setInterval(() => {
-    step++;
-    audio.volume = Math.max(0, Math.min(1, from + stepSize * step));
-    if (step >= steps) {
-      clearInterval(interval);
-      if (cb) cb();
-    }
-  }, stepTime);
 }
 
 function forceOpenPreview(albumId) {
