@@ -651,17 +651,18 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
 .a-icon-btn {
   background: var(--bg3);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 0.2rem 0.55rem;
-  font-size: 0.7rem;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 0.78rem;
   color: var(--muted);
   cursor: pointer;
   transition: all 0.15s;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
   line-height: 1;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 .a-icon-btn:hover { border-color: var(--border2); color: var(--text); }
 .a-icon-btn.listened { color: var(--green); border-color: rgba(90,158,114,0.35); background: var(--green-bg); }
@@ -1266,7 +1267,6 @@ function card(a) {
       ontouchcancel="touchPreviewStop(event)">
       ${a.image?`<img class="cover-img" src="${a.image}" alt="${esc(a.name)}" loading="lazy">`:`<div class="cover-placeholder">🎵</div>`}
       <div class="done-badge">✓</div>
-      ${a.listened?`<div class="listen-count" onclick="showHistory('${a.id}',event)" title="Listen history">× ${listenCount}</div>`:''}
       <div class="now-playing-indicator">
         <div class="np-bar"></div><div class="np-bar"></div><div class="np-bar"></div>
       </div>
@@ -1277,9 +1277,9 @@ function card(a) {
       ${a.year?`<div class="a-year">${a.year}</div>`:''}
       <div class="a-card-actions">
         ${a.listened
-          ? `<button class="a-icon-btn relisten" onclick="relisten('${a.id}',event)" title="Log relisten">↺ Relisten</button>
-             <button class="a-icon-btn listened" onclick="showHistory('${a.id}',event)" title="Listen history">✓ × ${listenCount}</button>`
-          : `<button class="a-icon-btn" onclick="toggleListened('${a.id}',event)" title="Mark as listened">✓ Listened</button>`
+          ? `<button class="a-icon-btn relisten" onclick="relisten('${a.id}',event)" title="Log relisten">↺</button>
+             <button class="a-icon-btn listened" onclick="showHistory('${a.id}',event)" title="Listen history">✓</button>`
+          : `<button class="a-icon-btn" onclick="toggleListened('${a.id}',event)" title="Mark as listened">✓</button>`
         }
         ${a.spotifyUrl?`<button class="a-icon-btn spotify" onclick="openSpotify('${a.spotifyUrl}',event)" title="Open in Spotify">♫</button>`:''}
         <button class="a-icon-btn remove" onclick="removeAlbum('${a.id}',event)" title="Remove">✕</button>
