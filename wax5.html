@@ -2092,17 +2092,22 @@ function setupJourneyObserver() {
       const card = entry.target;
       const albumId = card.dataset.id;
       const previewUrl = card.dataset.preview;
-      if (!previewUrl) return;
 
-      if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-        if (journeyPlayingId !== albumId) {
-          playJourneyPreview(albumId, previewUrl, card);
+      if (!entry.isIntersecting || entry.intersectionRatio < 0.5) {
+        // Card has scrolled out — stop if this card was playing
+        if (journeyPlayingId === albumId) {
+          stopJourneyAudio();
+          card.querySelector('.jcard-cover-wrap').classList.remove('playing');
         }
-      } else if (journeyPlayingId === albumId) {
-        stopJourneyAudio();
+        return;
+      }
+
+      // Card is in view and has a preview
+      if (previewUrl && journeyPlayingId !== albumId) {
+        playJourneyPreview(albumId, previewUrl, card);
       }
     });
-  }, { threshold: [0, 0.5, 1.0] });
+  }, { threshold: [0, 0.5] });
 
   document.querySelectorAll('#journey-wrap .jcard').forEach(card => {
     journeyObserver.observe(card);
