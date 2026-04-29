@@ -664,6 +664,154 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
 .a-icon-btn.spotify { color: #1ED760; border-color: rgba(30,215,96,0.25); }
 .a-icon-btn.remove { color: var(--red); border-color: rgba(224,92,92,0.25); }
 
+
+/* ── JOURNEY VIEW ── */
+#journey-wrap {
+  display: none;
+  flex-direction: column;
+  padding-bottom: 5rem;
+}
+#journey-wrap.active { display: flex; }
+
+.jcard {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.jcard-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem 0.5rem;
+}
+.jcard-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1.5px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; color: var(--accent); font-weight: 500;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+.jcard-header-info { flex: 1; min-width: 0; }
+.jcard-artist { font-size: 0.82rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jcard-date { font-size: 0.7rem; color: var(--muted); }
+.jcard-listened-pill {
+  font-size: 0.68rem; color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid rgba(90,158,114,0.3);
+  border-radius: 20px; padding: 0.15rem 0.55rem;
+  flex-shrink: 0;
+}
+.jcard-count-pill {
+  font-size: 0.68rem; color: var(--accent);
+  background: rgba(200,169,110,0.1);
+  border: 1px solid rgba(200,169,110,0.25);
+  border-radius: 20px; padding: 0.15rem 0.55rem;
+  flex-shrink: 0;
+}
+
+.jcard-cover-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg3);
+}
+.jcard-cover {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform 0.3s ease;
+}
+.jcard-cover-wrap:hover .jcard-cover { transform: scale(1.02); }
+.jcard-cover-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 4rem; background: var(--bg2);
+}
+
+/* Playing overlay on cover */
+.jcard-playing-overlay {
+  position: absolute;
+  bottom: 0.75rem; right: 0.75rem;
+  display: none;
+  align-items: flex-end;
+  gap: 2px;
+  height: 20px;
+  background: rgba(14,12,10,0.7);
+  border-radius: 20px;
+  padding: 0.3rem 0.6rem;
+}
+.jcard-cover-wrap.playing .jcard-playing-overlay { display: flex; }
+.jbar {
+  width: 3px; background: var(--accent); border-radius: 2px;
+  animation: jbarAnim 0.7s ease-in-out infinite alternate;
+}
+.jbar:nth-child(1) { height: 6px; animation-delay: 0s; }
+.jbar:nth-child(2) { height: 13px; animation-delay: 0.15s; }
+.jbar:nth-child(3) { height: 8px; animation-delay: 0.3s; }
+.jbar:nth-child(4) { height: 14px; animation-delay: 0.1s; }
+.jbar:nth-child(5) { height: 7px; animation-delay: 0.25s; }
+@keyframes jbarAnim { from { transform: scaleY(0.3); } to { transform: scaleY(1); } }
+
+.jcard-info {
+  padding: 0.65rem 1rem 0.25rem;
+}
+.jcard-album { font-size: 1rem; font-weight: 500; color: var(--text); cursor: pointer; display: inline-block; }
+.jcard-album:hover { color: var(--accent); }
+.jcard-meta { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+
+.jcard-note {
+  padding: 0 1rem 0.5rem;
+  font-size: 0.82rem; color: var(--muted);
+  line-height: 1.55; font-style: italic;
+  cursor: text;
+}
+.jcard-note-input {
+  width: 100%; background: none; border: none;
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+  color: var(--muted); font-style: italic; line-height: 1.55;
+  resize: none; outline: none; padding: 0;
+}
+.jcard-note-input::placeholder { color: rgba(138,128,112,0.5); }
+
+.jcard-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem 0.85rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+}
+
+/* View toggle buttons in header */
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+.vt-btn {
+  width: 28px; height: 26px;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none;
+  color: var(--muted); cursor: pointer;
+  transition: all 0.15s;
+}
+.vt-btn.active { background: var(--accent); color: #1a1713; }
+.vt-btn:hover:not(.active) { color: var(--text); }
+
+/* Hide sort/tabs/search in journey view */
+.journey-mode .tabs,
+.journey-mode .sort-bar,
+.journey-mode #search-panel { display: none; }
+.journey-mode #grid-wrap { display: none; }
+
 </style>
 </head>
 <body>
@@ -709,7 +857,14 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
     <div class="logo">Wax</div>
     <div class="header-right">
       <div class="stats-pill"><span id="want-count">0</span> to listen · <span id="done-count">0</span> done</div>
-
+      <div class="view-toggle">
+        <button class="vt-btn active" id="vt-grid" onclick="setView('grid')" title="Grid view">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="5" height="5" rx="1"/><rect x="7" y="0" width="5" height="5" rx="1"/><rect x="0" y="7" width="5" height="5" rx="1"/><rect x="7" y="7" width="5" height="5" rx="1"/></svg>
+        </button>
+        <button class="vt-btn" id="vt-journey" onclick="setView('journey')" title="Journey view">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="12" height="2.5" rx="1"/><rect x="0" y="4.75" width="12" height="2.5" rx="1"/><rect x="0" y="9.5" width="12" height="2.5" rx="1"/></svg>
+        </button>
+      </div>
       <button class="btn-icon" onclick="manualSync()" title="Sync now">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
@@ -740,6 +895,7 @@ html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', 
     <div id="search-results"></div>
   </div>
   <div id="grid-wrap"></div>
+  <div id="journey-wrap"></div>
 </div>
 
 <!-- ALBUM DETAIL PAGE -->
@@ -1772,6 +1928,175 @@ function apOpenArtist() {
 function closeAlbumPage() {
   document.getElementById('album-page').classList.remove('open');
   apCurrentAlbumId = null;
+}
+
+// ── JOURNEY VIEW ──
+let currentView = 'grid';
+let journeyObserver = null;
+let journeyAudio = null;
+let journeyPlayingId = null;
+
+function setView(view) {
+  currentView = view;
+  const app = document.getElementById('app');
+  const gridWrap = document.getElementById('grid-wrap');
+  const journeyWrap = document.getElementById('journey-wrap');
+  const vtGrid = document.getElementById('vt-grid');
+  const vtJourney = document.getElementById('vt-journey');
+
+  if (view === 'journey') {
+    app.classList.add('journey-mode');
+    journeyWrap.classList.add('active');
+    vtGrid.classList.remove('active');
+    vtJourney.classList.add('active');
+    renderJourney();
+    setupJourneyObserver();
+  } else {
+    app.classList.remove('journey-mode');
+    journeyWrap.classList.remove('active');
+    vtGrid.classList.remove('active');
+    vtGrid.classList.add('active');
+    vtJourney.classList.remove('active');
+    stopJourneyAudio();
+    if (journeyObserver) { journeyObserver.disconnect(); journeyObserver = null; }
+    renderGrid();
+  }
+}
+
+function renderJourney() {
+  const wrap = document.getElementById('journey-wrap');
+  // Show listened albums newest first, then want
+  const listened = sortAlbums(albums.filter(a => a.listened));
+  const want = albums.filter(a => !a.listened);
+
+  if (!listened.length && !want.length) {
+    wrap.innerHTML = '<div style="text-align:center;padding:4rem 2rem;color:var(--muted);font-size:0.9rem;">Your journey is empty — add some albums!</div>';
+    return;
+  }
+
+  const cards = [...listened, ...want].map(a => journeyCard(a)).join('');
+  wrap.innerHTML = cards;
+}
+
+function journeyCard(a) {
+  const listenCount = (a.listenHistory||[]).length || (a.listened ? 1 : 0);
+  const initials = (a.artist||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const listenDate = a.relistenedAt || a.listenedAt;
+  const dateStr = listenDate ? fmtRelativeDate(listenDate) : '';
+  const note = a.note || '';
+
+  return `<div class="jcard" data-id="${a.id}" data-preview="${a.previewUrl||''}">
+    <div class="jcard-header">
+      <div class="jcard-avatar">${initials}</div>
+      <div class="jcard-header-info">
+        <div class="jcard-artist">${esc(a.artist)}</div>
+        ${dateStr ? `<div class="jcard-date">${dateStr}</div>` : ''}
+      </div>
+      ${a.listened && listenCount > 1
+        ? `<div class="jcard-count-pill">× ${listenCount} listens</div>`
+        : a.listened
+          ? `<div class="jcard-listened-pill">✓ Listened</div>`
+          : `<div class="jcard-listened-pill" style="color:var(--accent);background:rgba(200,169,110,0.1);border-color:rgba(200,169,110,0.3);">★ Want</div>`
+      }
+    </div>
+    <div class="jcard-cover-wrap" onclick="openAlbumPage('${a.id}')">
+      ${a.image
+        ? `<img class="jcard-cover" src="${a.image}" alt="${esc(a.name)}" loading="lazy">`
+        : `<div class="jcard-cover-placeholder">🎵</div>`}
+      <div class="jcard-playing-overlay">
+        <div class="jbar"></div><div class="jbar"></div><div class="jbar"></div><div class="jbar"></div><div class="jbar"></div>
+      </div>
+    </div>
+    <div class="jcard-info">
+      <div class="jcard-album" onclick="openAlbumPage('${a.id}')">${esc(a.name)}</div>
+      <div class="jcard-meta">${[a.year, a.genre].filter(Boolean).join(' · ')}</div>
+    </div>
+    <div class="jcard-note">
+      <textarea class="jcard-note-input" placeholder="Add a note… (e.g. 'Discovered this on a road trip')"
+        onblur="saveJourneyNote('${a.id}', this.value)"
+        rows="1"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+      >${esc(note)}</textarea>
+    </div>
+    <div class="jcard-actions">
+      ${a.listened
+        ? `<button class="a-icon-btn relisten" onclick="relisten('${a.id}',event);setTimeout(()=>renderJourney(),100)" title="Log relisten">↺</button>
+           <button class="a-icon-btn listened" onclick="showHistory('${a.id}',event)" title="Listen history">✓</button>`
+        : `<button class="a-icon-btn" onclick="toggleListened('${a.id}',event);setTimeout(()=>renderJourney(),100)" title="Mark as listened">✓</button>`
+      }
+      ${a.spotifyUrl ? `<button class="a-icon-btn spotify" onclick="openSpotify('${a.spotifyUrl}',event)" title="Open in Spotify">♫</button>` : ''}
+      <button class="a-icon-btn remove" onclick="removeAlbum('${a.id}',event);setTimeout(()=>renderJourney(),100)" title="Remove">✕</button>
+    </div>
+  </div>`;
+}
+
+function fmtRelativeDate(ts) {
+  const diff = Date.now() - ts;
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days/7)} week${Math.floor(days/7)>1?'s':''} ago`;
+  if (days < 365) return `${Math.floor(days/30)} month${Math.floor(days/30)>1?'s':''} ago`;
+  return `${Math.floor(days/365)} year${Math.floor(days/365)>1?'s':''} ago`;
+}
+
+function saveJourneyNote(albumId, note) {
+  const a = albums.find(x => x.id === albumId);
+  if (!a) return;
+  a.note = note.trim();
+  saveAlbums(); scheduleSync();
+}
+
+function setupJourneyObserver() {
+  if (journeyObserver) journeyObserver.disconnect();
+  journeyObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const card = entry.target;
+      const albumId = card.dataset.id;
+      const previewUrl = card.dataset.preview;
+      if (!previewUrl) return;
+
+      if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+        if (journeyPlayingId !== albumId) {
+          playJourneyPreview(albumId, previewUrl, card);
+        }
+      } else if (!entry.isIntersecting && journeyPlayingId === albumId) {
+        stopJourneyAudio();
+        card.querySelector('.jcard-cover-wrap').classList.remove('playing');
+      }
+    });
+  }, { threshold: [0.6] });
+
+  document.querySelectorAll('.jcard').forEach(card => {
+    journeyObserver.observe(card);
+  });
+}
+
+function playJourneyPreview(albumId, url, card) {
+  stopJourneyAudio();
+  // Only play direct audio files in the feed
+  const isDirect = url.match(/\.(mp3|ogg|wav|m4a|aac|flac)(\?.*)?$/i) || url.includes('dl=1') || url.includes('dl=0');
+  if (!isDirect) return;
+  journeyAudio = new Audio(url);
+  journeyAudio.volume = 0.8;
+  journeyAudio.play().catch(()=>{});
+  journeyAudio.addEventListener('ended', () => {
+    card.querySelector('.jcard-cover-wrap').classList.remove('playing');
+    journeyPlayingId = null;
+  });
+  journeyPlayingId = albumId;
+  card.querySelector('.jcard-cover-wrap').classList.add('playing');
+}
+
+function stopJourneyAudio() {
+  if (journeyAudio) {
+    journeyAudio.pause();
+    journeyAudio.currentTime = 0;
+    journeyAudio = null;
+  }
+  journeyPlayingId = null;
+  document.querySelectorAll('.jcard-cover-wrap.playing').forEach(el => el.classList.remove('playing'));
 }
 
 function loadAlbums() { try { return JSON.parse(localStorage.getItem(ALBUMS_KEY)) || []; } catch { return []; } }
