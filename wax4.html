@@ -1651,7 +1651,7 @@ function openAlbumPage(albumId) {
     actions.push(`<button class="ap-header-btn listened" onclick="apMarkListened()">✓ Mark Listened</button>`);
   }
   if (album.spotifyUrl) {
-    actions.push(`<button class="ap-header-btn spotify" onclick="window.open('${album.spotifyUrl}','_blank')">Spotify ↗</button>`);
+    actions.push(`<button class="ap-header-btn spotify" onclick="window.open(this.dataset.url,'_blank')" data-url="${album.spotifyUrl}">Spotify ↗</button>`);
   }
   document.getElementById('ap-header-actions').innerHTML = actions.join('');
 
